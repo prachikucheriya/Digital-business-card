@@ -1957,6 +1957,16 @@
         Facebook: ['fa-brands', 'fa-facebook-f', '#1877f2'], YouTube: ['fa-brands', 'fa-youtube', '#ff0000'],
         LinkedIn: ['fa-brands', 'fa-linkedin-in', '#0a66c2'], Telegram: ['fa-brands', 'fa-telegram', '#229ed9']
       };
+      if (block.type === 'WhatsApp') {
+        const whatsappColor = block.color || 'bg-green-600';
+        return `
+          <a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${block.title}" class="relative w-full py-3.5 px-5 rounded-2xl ${whatsappColor} text-white flex items-center justify-center shadow-lg transition transform active:scale-95 mb-[10px] hover:brightness-110">
+            <span class="absolute left-6 w-8 h-8 rounded-full bg-black/20 flex items-center justify-center"><i class="fa-brands fa-whatsapp text-white text-lg" aria-hidden="true"></i></span>
+            <span class="font-bold text-sm tracking-wide drop-shadow-md text-center">${block.title}</span>
+            <i class="fa-solid fa-chevron-right absolute right-6 opacity-70 text-xs" aria-hidden="true"></i>
+          </a>
+        `;
+      }
       const socialIcon = isBrand ? iconByType[block.type] : null;
       if (socialIcon) {
         const [iconFamily, iconName, color] = socialIcon;

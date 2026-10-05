@@ -242,15 +242,9 @@
       client._firestoreSlug = client.slug;
     }
 
-    // Configurable URLs
-    const APP_CONFIG = {
-      productionBase: 'https://netriaconnect.online'
-    };
-
     function getBaseUrl() {
-      // Determine if running locally/development or production
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '';
-      return isLocal ? window.location.origin : APP_CONFIG.productionBase;
+      // Build links on the same domain currently serving the app (Vercel, Netlify, or custom domain).
+      return window.location.origin;
     }
 
     // Default Section Layout Blueprint for New Clients

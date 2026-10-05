@@ -1857,12 +1857,19 @@
           case 'Videos':
             const vv = c.videos.filter(v => v.enabled !== false);
             if (vv.length > 0) {
-              const vHtml = vv.map(v => `
-                <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 bg-black/40 shadow-md">
-                  ${v.embedUrl ? `<iframe src="${v.embedUrl}" class="w-full aspect-video" frameborder="0" allowfullscreen></iframe>` : `<video src="${v.url}" controls class="w-full aspect-video"></video>`}
-                  <div class="p-4"><h4 class="font-bold text-sm text-white">${v.title}</h4>${v.description ? `<p class="text-xs opacity-70 mt-1">${v.description}</p>` : ''}</div>
-                </div>
-              `).join('');
+              const vHtml = vv.map(v => {
+                const youtubeId = (v.embedUrl || '').match(/youtube\.com\/embed\/([^?&]+)/)?.[1];
+                const poster = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : '';
+                const videoStage = v.embedUrl
+                  ? `<div data-profile-video data-video-src="${encodeURIComponent(v.embedUrl)}" class="relative aspect-video bg-black"><img src="${poster}" alt="${v.title || 'Video preview'}" class="w-full h-full object-cover" onerror="this.style.display='none'"><button type="button" onclick="playProfileVideo(this)" aria-label="Play ${v.title || 'video'}" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/25 hover:bg-black/40 transition"><span class="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl"><i class="fa-solid fa-play ml-1 text-xl"></i></span></button></div>`
+                  : `<div data-profile-video class="relative aspect-video bg-black"><video src="${v.url}" preload="metadata" playsinline class="w-full h-full object-contain"></video><button type="button" onclick="playProfileVideo(this)" aria-label="Play ${v.title || 'video'}" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/25 hover:bg-black/40 transition"><span class="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl"><i class="fa-solid fa-play ml-1 text-xl"></i></span></button></div>`;
+                return `
+                  <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 bg-black/40 shadow-md">
+                    ${videoStage}
+                    <div class="p-4"><h4 class="font-bold text-sm text-white">${v.title}</h4>${v.description ? `<p class="text-xs opacity-70 mt-1">${v.description}</p>` : ''}</div>
+                  </div>
+                `;
+              }).join('');
               html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3><div>${vHtml}</div></div>`;
             }
             break;
@@ -1900,6 +1907,38 @@
 
       html += `<div class="text-center pt-8 border-t border-white/10 mt-6"><span class="text-[10px] opacity-50 uppercase tracking-widest font-bold">Powered by <strong>Netria Connect</strong></span></div></div>`;
       return html;
+    }
+
+    function playProfileVideo(button) {
+      const stage = button.closest('[data-profile-video]');
+      if (!stage) return;
+      const video = stage.querySelector('video');
+      if (video) {
+        video.controls = true;
+        button.remove();
+        const playback = video.play();
+        if (playback && typeof playback.catch === 'function') playback.catch(error => {
+          console.error('Video playback failed:', error);
+          showToast('Could not play this video. Please try again.', 'error');
+        });
+        return;
+      }
+      try {
+        const embedUrl = decodeURIComponent(stage.dataset.videoSrc || '');
+        const url = new URL(embedUrl);
+        url.searchParams.set('autoplay', '1');
+        const iframe = document.createElement('iframe');
+        iframe.src = url.toString();
+        iframe.className = 'w-full aspect-video';
+        iframe.setAttribute('title', 'Profile video');
+        iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('frameborder', '0');
+        stage.replaceChildren(iframe);
+      } catch (error) {
+        console.error('Could not open profile video:', error);
+        showToast('Could not open this video. Please check the video link.', 'error');
+      }
     }
 
     function renderPublicBtn(block, url, isBrand = false) {

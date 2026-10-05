@@ -171,10 +171,46 @@
       AppState.clients = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.data().id || doc.id, _firestoreSlug: doc.id }));
     }
 
+    function makeFirestoreSafe(value) {
+      if (value === undefined || typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint') return undefined;
+      if (typeof File !== 'undefined' && value instanceof File) return undefined;
+      if (typeof Blob !== 'undefined' && value instanceof Blob) return undefined;
+      if (Array.isArray(value)) return value.flat(Infinity).map(makeFirestoreSafe).filter(item => item !== undefined);
+      if (value && typeof value === 'object' && !(value instanceof Date)) {
+        const safe = {};
+        Object.entries(value).forEach(([key, item]) => {
+          const cleaned = makeFirestoreSafe(item);
+          if (cleaned !== undefined) safe[key] = cleaned;
+        });
+        return safe;
+      }
+      return value;
+    }
+
+    async function moveLegacyMediaToStorage(client) {
+      const uploadDataUrl = async (url, label) => {
+        if (typeof url !== 'string' || !url.startsWith('data:')) return url;
+        const ref = firebaseStorage.ref(`client-media/${client.id}/migrated-${label}-${Date.now()}`);
+        await ref.putString(url, 'data_url');
+        return ref.getDownloadURL();
+      };
+      client.basicInfo = client.basicInfo || {};
+      client.basicInfo.avatarUrl = await uploadDataUrl(client.basicInfo.avatarUrl, 'avatar');
+      client.gallery = Array.isArray(client.gallery) ? client.gallery : [];
+      for (const [index, image] of client.gallery.entries()) {
+        image.url = await uploadDataUrl(image.url, `gallery-${index}`);
+      }
+      const catalogItems = [...(client.services || []), ...(client.products || [])];
+      for (const [index, item] of catalogItems.entries()) {
+        item.image = await uploadDataUrl(item.image, `catalog-${index}`);
+      }
+    }
+
     async function saveClientToFirestore(client) {
       if (!firebaseAuth.currentUser) throw new Error('Please sign in before saving profiles.');
+      await moveLegacyMediaToStorage(client);
       const oldSlug = client._firestoreSlug || client.slug;
-      const cleanClient = { ...client };
+      const cleanClient = makeFirestoreSafe(client);
       delete cleanClient._firestoreSlug;
       if (oldSlug !== client.slug) {
         const target = clientsCollection.doc(client.slug);
@@ -1256,31 +1292,32 @@
       `);
     }
 
-    function handleClientGalleryFiles(event, clientId) {
-      const files = event.target.files;
+    async function handleClientGalleryFiles(event, clientId) {
+      const files = Array.from(event.target.files || []);
       if (!files.length) return;
       const c = AppState.clients.find(x => x.id === clientId);
+      if (!c) return;
       
       if (c.gallery.length + files.length > 30) {
         showToast(`Cannot add ${files.length} photos. Limit is 30.`, 'error');
-        closeModal();
         return;
       }
-
-      let loadedCount = 0;
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          c.gallery.push({ id: 'img_' + Date.now() + Math.random(), url: e.target.result, title: '', caption: '', enabled: true });
-          loadedCount++;
-          if (loadedCount === files.length) {
-            closeModal();
-            renderApp();
-            showToast(`${files.length} photo(s) added!`);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      const added = [];
+      try {
+        for (const file of files) {
+          if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10 MB.`);
+          const imageRef = firebaseStorage.ref(`client-media/${c.id}/gallery-${Date.now()}-${file.name}`);
+          await imageRef.put(file);
+          added.push({ id: 'img_' + Date.now() + Math.random(), url: await imageRef.getDownloadURL(), title: '', caption: '', enabled: true });
+        }
+        c.gallery.push(...added);
+        closeModal();
+        renderApp();
+        showToast(`${added.length} photo(s) uploaded. Save Changes to publish them.`);
+      } catch (error) {
+        console.error('Could not upload gallery image:', error);
+        showToast(`Gallery upload failed: ${error.message}`, 'error');
+      }
     }
 
     // Modal: Video Link / Upload

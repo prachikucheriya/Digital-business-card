@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NETRIA CONNECT ADMIN — Agency Digital Identity Manager</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#0f172a',
+              accent: '#38bdf8',
+              emerald: '#10b981',
+              violet: '#8b5cf6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDKs (compat CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Glass Effect for Dashboard Elements */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-nav {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Mobile Device Frame Mockup */
+    .mobile-frame {
+      width: 375px;
+      height: 720px;
+      border-radius: 44px;
+      border: 12px solid #1e293b;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(37, 99, 235, 0.2);
+      position: relative;
+      overflow: hidden;
+      background: #0f172a;
+    }
+    .mobile-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 24px;
+      background: #1e293b;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      z-index: 50;
+    }
+
+    /* Public Profile Themes */
+    .theme-modern { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #f8fafc; }
+    .theme-minimal { background: #ffffff; color: #0f172a; }
+    .theme-minimal .card-bg { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; }
+    .theme-dark { background: #090d16; color: #e2e8f0; }
+    .theme-glass { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #ffffff; }
+    .theme-creative { background: linear-gradient(135deg, #4c1d95 0%, #831843 100%); color: #ffffff; }
+    .theme-emerald { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); color: #f0fdf4; }
+
+    /* Layout Helpers */
+    .masonry-grid { column-count: 2; column-gap: 0.75rem; }
+    .masonry-item { break-inside: avoid; margin-bottom: 0.75rem; }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.92; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle { animation: pulse-subtle 3s infinite ease-in-out; }
+  </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+  <!-- Global Modal Container -->
+  <div id="global-modal" class="fixed inset-0 z-[9000] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+    <div id="modal-content" class="bg-slate-800 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative transform transition-all my-8">
+      <!-- Modal dynamically populated -->
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-root" class="min-h-full flex flex-col">
+    <!-- DYNAMIC ROUTER VIEWPORT -->
+    <main id="view-viewport" class="flex-1 flex flex-col relative">
+      <!-- Views will render inside here dynamically -->
+    </main>
+  </div>
+
+  <script>
+    
+    // Firebase Configuration & Initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjVDb4jVSo6inVPJQgpDGQ0HZdJeXOKS4",
+      authDomain: "digital-business-card-4c09e.firebaseapp.com",
+      projectId: "digital-business-card-4c09e",
+      storageBucket: "digital-business-card-4c09e.firebasestorage.app",
+      messagingSenderId: "27405416067",
+      appId: "1:27405416067:web:f310177a3ddf6d4a424db6",
+      measurementId: "G-4Z0DZ60T8S"
+    };
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    const analytics = firebase.analytics();
+    const firebaseAuth = firebase.auth();
+    const firestore = firebase.firestore();
+    const firebaseStorage = firebase.storage();
+    const clientsCollection = firestore.collection('clients');
+
+    async function loadClientsFromFirestore() {
+      const snapshot = await clientsCollection.get();
+      AppState.clients = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.data().id || doc.id, _firestoreSlug: doc.id }));
+    }
+
+    async function saveClientToFirestore(client) {
+      if (!firebaseAuth.currentUser) throw new Error('Please sign in before saving profiles.');
+      const oldSlug = client._firestoreSlug || client.slug;
+      const cleanClient = { ...client };
+      delete cleanClient._firestoreSlug;
+      if (oldSlug !== client.slug) {
+        const target = clientsCollection.doc(client.slug);
+        await firestore.runTransaction(async transaction => {
+          const existing = await transaction.get(target);
+          if (existing.exists) throw new Error('That profile link is already in use. Choose a different business name.');
+          transaction.set(target, cleanClient);
+          transaction.delete(clientsCollection.doc(oldSlug));
+        });
+      } else {
+        await clientsCollection.doc(client.slug).set(cleanClient);
+      }
+      client._firestoreSlug = client.slug;
+    }
+
+    // Configurable URLs
+    const APP_CONFIG = {
+      productionBase: 'https://netriaconnect.online'
+    };
+
+    function getBaseUrl() {
+      // Determine if running locally/development or production
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '';
+      return isLocal ? window.location.origin : APP_CONFIG.productionBase;
+    }
+
+    // Default Section Layout Blueprint for New Clients
+    const DEFAULT_SECTION_ORDER = [
+      { id: 'sec_photo', type: 'ProfilePhoto', title: 'Profile Photo', enabled: true },
+      { id: 'sec_name', type: 'FullName', title: 'Full Name', enabled: true },
+      { id: 'sec_biz', type: 'BusinessName', title: 'Business Name', enabled: true },
+      { id: 'sec_bio', type: 'Bio', title: 'Bio / About', enabled: true },
+      { id: 'sec_wa', type: 'WhatsApp', title: 'WhatsApp Button', enabled: true, color: 'bg-green-500' },
+      { id: 'sec_call', type: 'Call', title: 'Call Button', enabled: true, color: 'bg-emerald-600' },
+      { id: 'sec_email', type: 'Email', title: 'Email Button', enabled: true, color: 'bg-blue-600' },
+      { id: 'sec_web', type: 'Website', title: 'Website Button', enabled: true, color: 'bg-indigo-600' },
+      { id: 'sec_ig', type: 'Instagram', title: 'Instagram', enabled: true, color: 'bg-pink-600' },
+      { id: 'sec_fb', type: 'Facebook', title: 'Facebook', enabled: true, color: 'bg-blue-500' },
+      { id: 'sec_yt', type: 'YouTube', title: 'YouTube', enabled: true, color: 'bg-rose-600' },
+      { id: 'sec_li', type: 'LinkedIn', title: 'LinkedIn', enabled: false, color: 'bg-blue-700' },
+      { id: 'sec_tg', type: 'Telegram', title: 'Telegram', enabled: false, color: 'bg-sky-500' },
+      { id: 'sec_links', type: 'CustomLinks', title: 'Custom Links Hub', enabled: true },
+      { id: 'sec_vcard', type: 'vCard', title: 'Download Contact', enabled: true },
+      { id: 'sec_gal', type: 'Gallery', title: 'Photo Gallery', enabled: true },
+      { id: 'sec_vid', type: 'Videos', title: 'Video Showcase', enabled: true },
+      { id: 'sec_serv', type: 'Services', title: 'Services Catalog', enabled: true },
+      { id: 'sec_prod', type: 'Products', title: 'Products Store', enabled: true },
+      { id: 'sec_form', type: 'ContactForm', title: 'Lead Enquiry Form', enabled: true },
+      { id: 'sec_map', type: 'Map', title: 'Google Maps & Hours', enabled: true }
+    ];
+
+    // Core Agency Application State (In-Memory Database)
+    const AppState = {
+      currentView: 'login', // login, dashboard, public-profile
+      activeDashTab: 'overview', // overview, clients, renewals, analytics, settings
+      currentClientId: null, // Used when editing a specific client
+      activeClientTab: 'basic', // basic, media, hub, CRM, delivery, renewal
+      
+      adminUser: {
+        name: 'Agency Admin',
+        email: 'admin@netriaconnect.online'
+      },
+
+      // Client Profiles Database
+      clients: [
+        {
+          id: 'c_001',
+          slug: 'kanhaiya-veg',
+          status: 'active', // active, draft, inactive, archived
+          activationDate: '2025-10-10T00:00:00Z',
+          renewalDate: '2026-10-10T00:00:00Z',
+          renewalAmount: 999,
+          paymentStatus: 'due', // paid, due, overdue
+          snoozeDate: null,
+          basicInfo: {
+            fullName: 'Rahul Sharma',
+            businessName: 'Kanhaiya Veg AC Restaurant',
+            phone: '9876543210',
+            whatsapp: '919876543210',
+            email: 'hello@kanhaiyaveg.com',
+            website: 'https://kanhaiyaveg.com',
+            bio: 'Premium pure veg multi-cuisine AC restaurant serving authentic North Indian, South Indian and Chinese delicacies in Jalgaon.',
+            address: 'MG Road, Jalgaon, Maharashtra 425001',
+            googleMapsUrl: 'https://maps.app.goo.gl/placeholder',
+            openingHours: 'Mon-Sun: 11:00 AM - 11:00 PM',
+            avatarUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&auto=format&fit=crop&q=80',
+            logoUrl: '',
+            theme: 'modern'
+          },
+          socials: { instagram: 'https://instagram.com/kanhaiyaveg', facebook: '', youtube: '', linkedin: '', telegram: '' },
+          galleryConfig: { style: 'grid', captionVisible: true },
+          gallery: [
+            { id: 'g1', url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600', title: 'Restaurant Ambience', caption: 'Cozy family seating', enabled: true },
+            { id: 'g2', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600', title: 'Special Thali', caption: 'Our signature dish', enabled: true }
+          ],
+          videos: [],
+          services: [
+            { id: 's1', name: 'Party Hall Booking', price: '₹5,000', description: 'AC Banquet hall for 50-100 pax with catering.', image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400', cta: 'Book Now', ctaUrl: 'https://wa.me/919876543210', enabled: true }
+          ],
+          products: [],
+          links: [{ id: 'l1', title: 'View Zomato Menu', url: 'https://zomato.com', icon: 'fa-utensils', enabled: true }],
+          sectionOrder: JSON.parse(JSON.stringify(DEFAULT_SECTION_ORDER)), // Clone default
+          analytics: { views: 420, leads: 12, clicks: 89 },
+          leads: [
+            { id: 'ld1', name: 'Amit Patil', phone: '9000011111', message: 'Need booking for birthday party.', status: 'new', date: new Date().toISOString() }
+          ]
+        },
+        {
+          id: 'c_002',
+          slug: 'dr-ananya-dental',
+          status: 'active',
+          activationDate: '2026-09-01T00:00:00Z',
+          renewalDate: '2027-09-01T00:00:00Z',
+          renewalAmount: 1499,
+          paymentStatus: 'paid',
+          snoozeDate: null,
+          basicInfo: {
+            fullName: 'Dr. Ananya Roy',
+            businessName: 'SmileCare Dental Clinic',
+            phone: '9765432109',
+            whatsapp: '919765432109',
+            email: 'dr.ananya@smilecare.com',
+            website: '',
+            bio: 'Advanced dental clinic specializing in root canals, implants, and cosmetic dentistry.',
+            address: '1st Floor, Health Arcade, Pune',
+            googleMapsUrl: '',
+            openingHours: 'Mon-Sat: 10AM - 8PM',
+            avatarUrl: 'https://images.unsplash.com/photo-1590611936760-eeb9bc598548?w=400&auto=format&fit=crop&q=80',
+            logoUrl: '',
+            theme: 'minimal'
+          },
+          socials: { instagram: '', facebook: '', youtube: '', linkedin: '', telegram: '' },
+          galleryConfig: { style: 'simple', captionVisible: true },
+          gallery: [],
+          videos: [],
+          services: [],
+          products: [],
+          links: [],
+          sectionOrder: JSON.parse(JSON.stringify(DEFAULT_SECTION_ORDER)),
+          analytics: { views: 150, leads: 3, clicks: 20 },
+          leads: []
+        }
+      ]
+    };
+
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgClass = type === 'success' ? 'bg-emerald-600 border-emerald-500' : type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-blue-600 border-blue-500';
+      const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border text-white text-sm font-medium shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 ${bgClass}`;
+      toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function openModal(htmlContent) {
+      const modal = document.getElementById('global-modal');
+      document.getElementById('modal-content').innerHTML = htmlContent;
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('global-modal').classList.add('hidden');
+    }
+
+    function navigateTo(viewName, dashTab = null, clientId = null) {
+      AppState.currentView = viewName;
+      if (dashTab) AppState.activeDashTab = dashTab;
+      if (clientId !== null) AppState.currentClientId = clientId;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      renderApp();
+    }
+
+    function copyToClipboard(text, message = 'Copied to clipboard!') {
+      try {
+        const dummy = document.createElement('textarea');
+        document.body.appendChild(dummy);
+        dummy.value = text;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showToast(message, 'success');
+      } catch (err) {
+        showToast('Failed to copy', 'error');
+      }
+    }
+
+    function generateSlug(name) {
+      if (!name) return 'profile-' + Math.floor(Math.random() * 1000);
+      let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      if (!baseSlug) baseSlug = 'profile';
+      
+      let slug = baseSlug;
+      let counter = 2;
+      while (AppState.clients.some(c => c.slug === slug && c.id !== AppState.currentClientId)) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+      return slug;
+    }
+
+    function getRenewalStatusInfo(client) {
+      const today = new Date();
+      const renewalDate = new Date(client.renewalDate);
+      const reminderDate = new Date(renewalDate);
+      reminderDate.setDate(reminderDate.getDate() - 15);
+      
+      let status = 'paid';
+      let tag = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">Paid</span>';
+      
+      if (client.paymentStatus !== 'paid') {
+        if (today > renewalDate) {
+          status = 'overdue';
+          tag = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold">Overdue</span>';
+        } else if (today >= reminderDate) {
+          status = 'due';
+          tag = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold">Due Soon</span>';
+        }
+      }
+      
+      const diffTime = renewalDate - today;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return { status, tag, daysLeft, renewalDateStr: renewalDate.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) };
+    }
+
+
+    function renderApp() {
+      const viewport = document.getElementById('view-viewport');
+      
+      if (AppState.currentView === 'login') {
+        viewport.innerHTML = renderAdminLogin();
+      } else if (AppState.currentView === 'public-profile') {
+        viewport.innerHTML = renderPublicProfileEngine();
+      } else {
+        viewport.innerHTML = renderAdminDashboardShell();
+        
+        // Execute post-render scripts
+        if (AppState.activeDashTab === 'overview') initOverviewChart();
+        if (AppState.activeDashTab === 'client_builder' && AppState.activeClientTab === 'hub') initClientPreviewSync();
+      }
+    }
+
+    function renderAdminLogin() {
+      return `
+        <div class="flex-1 flex items-center justify-center p-6 bg-slate-900 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.15),rgba(255,255,255,0))]">
+          <div class="glass-card p-10 rounded-3xl border border-slate-800 max-w-md w-full shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
+            <div class="text-center mb-8">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white font-extrabold text-3xl mx-auto mb-4 shadow-lg shadow-blue-500/30">N</div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Netria Agency Login</h2>
+              <p class="text-xs text-slate-400 mt-2">Manage your client digital identities & renewals.</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); signInAdmin();" class="space-y-5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Admin Email</label>
+                <input id="admin-email" type="email" autocomplete="username" placeholder="Admin email" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                <input id="admin-password" type="password" autocomplete="current-password" placeholder="Password" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition">
+                Access Dashboard
+              </button>
+            </form>
+            <div class="mt-8 text-center text-[10px] text-slate-500">Secure Admin Portal v2.0</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function signInAdmin() {
+      const email = document.getElementById('admin-email').value.trim();
+      const password = document.getElementById('admin-password').value;
+      try {
+        await firebaseAuth.signInWithEmailAndPassword(email, password);
+        await loadClientsFromFirestore();
+        navigateTo('dashboard', 'overview');
+      } catch (error) {
+        console.error('Firebase sign-in failed:', error);
+        showToast(error.code === 'auth/invalid-credential' ? 'Email or password is incorrect.' : `Sign-in failed: ${error.message}`, 'error');
+      }
+    }
+
+    function renderAdminDashboardShell() {
+      const tab = AppState.activeDashTab;
+      
+      const menu = [
+        { id: 'overview', label: 'Agency Overview', icon: 'fa-gauge-high' },
+        { id: 'clients', label: 'My Client Profiles', icon: 'fa-users' },
+        { id: 'renewals', label: 'Renewal Reminders', icon: 'fa-bell', badge: AppState.clients.filter(c => getRenewalStatusInfo(c).status !== 'paid').length },
+        { id: 'analytics', label: 'Global Analytics', icon: 'fa-chart-pie' },
+        { id: 'settings', label: 'Agency Settings', icon: 'fa-gear' }
+      ];
+
+      return `
+        <!-- Top Navbar -->
+        <header class="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6 sticky top-0 z-40">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">N</div>
+            <div>
+              <span class="font-extrabold text-lg tracking-tight text-white block leading-tight">NETRIA CONNECT</span>
+              <span class="text-[9px] uppercase font-bold tracking-widest text-blue-400 block -mt-1">Agency Portal</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <button class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"><i class="fa-solid fa-bell"></i></button>
+            <div class="flex items-center gap-2 pl-4 border-l border-slate-800">
+              <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">AD</div>
+              <span class="text-xs font-semibold text-slate-300 hidden sm:block">Admin User</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="flex-1 flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden">
+          <!-- Sidebar -->
+          <aside class="w-full md:w-64 bg-slate-950 border-r border-slate-800 p-4 flex flex-col shrink-0 overflow-y-auto">
+            <nav class="space-y-1">
+              ${menu.map(m => `
+                <button onclick="navigateTo('dashboard', '${m.id}')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${tab === m.id || (tab==='client_builder' && m.id==='clients') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}">
+                  <div class="flex items-center gap-3">
+                    <i class="fa-solid ${m.icon} w-4 text-center"></i>
+                    <span>${m.label}</span>
+                  </div>
+                  ${m.badge ? `<span class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-md shadow-rose-500/20">${m.badge}</span>` : ''}
+                </button>
+              `).join('')}
+            </nav>
+            <div class="mt-auto pt-4">
+              <button onclick="navigateTo('login')" class="w-full py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-950/30 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-from-bracket"></i> Secure Logout
+              </button>
+            </div>
+          </aside>
+
+          <!-- Main Content Area -->
+          <main class="flex-1 overflow-y-auto bg-slate-900 p-4 sm:p-6 lg:p-8">
+            ${renderDashboardSubTab(tab)}
+          </main>
+        </div>
+      `;
+    }
+
+    function renderDashboardSubTab(tab) {
+      switch(tab) {
+        case 'overview': return renderAgencyOverview();
+        case 'clients': return renderClientList();
+        case 'renewals': return renderRenewalDashboard();
+        case 'client_builder': return renderClientBuilderShell();
+        default: return renderAgencyOverview();
+      }
+    }
+
+    function renderAgencyOverview() {
+      const totalClients = AppState.clients.length;
+      const activeProfiles = AppState.clients.filter(c => c.status === 'active').length;
+      
+      let dueRenewals = [];
+      let totalViews = 0;
+      let totalLeads = 0;
+
+      AppState.clients.forEach(c => {
+        const info = getRenewalStatusInfo(c);
+        if (info.status !== 'paid') dueRenewals.push({ client: c, info });
+        totalViews += c.analytics.views || 0;
+        totalLeads += c.leads.length || 0;
+      });
+
+      return `
+        <div class="max-w-6xl mx-auto space-y-6">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl font-black text-white">Agency Overview</h1>
+            <button onclick="createNewClient()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md shadow-blue-600/30 flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> New Client Profile
+            </button>
+          </div>
+
+          <!-- KPI Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            ${[
+              { label: 'Total Clients', val: totalClients, icon: 'fa-users', color: 'text-blue-400' },
+              { label: 'Active Profiles', val: activeProfiles, icon: 'fa-address-card', color: 'text-emerald-400' },
+              { label: 'Total Profile Views', val: totalViews.toLocaleString(), icon: 'fa-eye', color: 'text-indigo-400' },
+              { label: 'Total Leads Captured', val: totalLeads, icon: 'fa-magnet', color: 'text-cyan-400' }
+            ].map(k => `
+              <div class="glass-card p-5 rounded-2xl border border-slate-800">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2">
+                  <span>${k.label}</span>
+                  <i class="fa-solid ${k.icon} ${k.color}"></i>
+                </div>
+                <div class="text-3xl font-black text-white">${k.val}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Analytics Chart -->
+            <div class="lg:col-span-2 glass-card p-6 rounded-3xl border border-slate-800">
+              <h3 class="font-bold text-sm text-white mb-4">Global Traffic (All Clients)</h3>
+              <div class="h-64 relative"><canvas id="overview-chart"></canvas></div>
+            </div>
+
+            <!-- Urgent Renewals Panel -->
+            <div class="glass-card p-6 rounded-3xl border border-rose-900/50 flex flex-col">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                  <i class="fa-solid fa-bell text-rose-500"></i> Action Required
+                </h3>
+                <span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-bold border border-rose-500/30">${dueRenewals.length} Pending</span>
+              </div>
+              
+              <div class="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                ${dueRenewals.length === 0 ? '<p class="text-xs text-slate-400 text-center py-4">All client accounts are up to date! 🎉</p>' : ''}
+                ${dueRenewals.map(d => `
+                  <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/50">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 class="text-xs font-bold text-white truncate w-40">${d.client.basicInfo.businessName}</h4>
+                        <p class="text-[10px] text-slate-400">${d.client.basicInfo.fullName}</p>
+                      </div>
+                      ${d.info.tag}
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-300 font-semibold mb-3">
+                      <span>Due: ${d.info.renewalDateStr}</span>
+                      <span class="text-white">₹${d.client.renewalAmount}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button onclick="sendWhatsAppReminder('${d.client.id}')" class="py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-[10px] font-bold text-white transition">
+                        <i class="fa-brands fa-whatsapp"></i> Remind
+                      </button>
+                      <button onclick="markAsPaid('${d.client.id}')" class="py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] font-bold text-white transition border border-slate-600">
+                        Mark Paid
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <button onclick="navigateTo('dashboard', 'renewals')" class="w-full mt-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">View All Renewals →</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function initOverviewChart() {
+      const ctx = document.getElementById('overview-chart');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [
+              { label: 'Profile Views', data: [1200, 1900, 1500, 2200], backgroundColor: '#38bdf8', borderRadius: 4 },
+              { label: 'Lead Captures', data: [45, 60, 50, 85], backgroundColor: '#10b981', borderRadius: 4 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+            scales: {
+              x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#1e293b' } },
+              y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#1e293b' } }
+            }
+          }
+        });
+      }
+    }
+
+
+    function renderClientList() {
+      return `
+        <div class="max-w-6xl mx-auto space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-black text-white">My Client Profiles</h1>
+              <p class="text-xs text-slate-400 mt-1">Manage and edit all active digital identities.</p>
+            </div>
+            <button onclick="createNewClient()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 flex items-center gap-2 transition">
+              <i class="fa-solid fa-plus"></i> Create New Profile
+            </button>
+          </div>
+
+          <div class="glass-card rounded-3xl border border-slate-800 overflow-hidden">
+            <!-- Search & Filters Bar -->
+            <div class="p-4 border-b border-slate-800 flex flex-wrap gap-3 bg-slate-900/50">
+              <div class="flex-1 min-w-[200px] relative">
+                <i class="fa-solid fa-search absolute left-3.5 top-2.5 text-slate-500 text-sm"></i>
+                <input type="text" placeholder="Search by client, business, slug or phone..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <select class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs font-semibold text-slate-300 focus:outline-none">
+                <option>All Statuses</option>
+                <option>Active</option>
+                <option>Draft</option>
+                <option>Inactive</option>
+                <option>Archived</option>
+              </select>
+            </div>
+
+            <!-- Client Data Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th class="p-4">Client / Business</th>
+                    <th class="p-4">Public URL Slug</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4">Renewal Date</th>
+                    <th class="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  ${AppState.clients.map(c => {
+                    const rInfo = getRenewalStatusInfo(c);
+                    const statusColors = { active: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', draft: 'text-slate-400 bg-slate-500/10 border-slate-500/30', inactive: 'text-amber-400 bg-amber-500/10 border-amber-500/30', archived: 'text-rose-400 bg-rose-500/10 border-rose-500/30' };
+                    const sCls = statusColors[c.status] || statusColors.draft;
+                    
+                    return `
+                      <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-4">
+                          <div class="flex items-center gap-3">
+                            <img src="${c.basicInfo.avatarUrl || 'https://ui-avatars.com/api/?name=C'}" class="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                            <div>
+                              <div class="font-bold text-white text-sm">${c.basicInfo.businessName}</div>
+                              <div class="text-[10px] text-slate-400">${c.basicInfo.fullName} • ${c.basicInfo.phone}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="p-4">
+                          <a href="${getBaseUrl()}/p/${c.slug}" target="_blank" class="text-blue-400 hover:underline font-semibold flex items-center gap-1">
+                            /p/${c.slug} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                          </a>
+                        </td>
+                        <td class="p-4">
+                          <span class="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider ${sCls}">${c.status}</span>
+                        </td>
+                        <td class="p-4">
+                          <div class="font-semibold text-slate-200">${rInfo.renewalDateStr}</div>
+                          <div class="mt-1">${rInfo.tag}</div>
+                        </td>
+                        <td class="p-4">
+                          <div class="flex items-center justify-end gap-2">
+                            <button onclick="navigateTo('dashboard', 'client_builder', '${c.id}')" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Edit Profile">
+                              <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="copyToClipboard('${getBaseUrl()}/p/${c.slug}')" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Copy Link">
+                              <i class="fa-solid fa-link"></i>
+                            </button>
+                            <!-- Dropdown Trigger (simulated with standard buttons for simplicity) -->
+                            <button onclick="duplicateClient('${c.id}')" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition" title="Duplicate">
+                              <i class="fa-solid fa-copy"></i>
+                            </button>
+                            <button onclick="deleteClient('${c.id}')" class="p-2 rounded-lg bg-rose-900/30 hover:bg-rose-800 text-rose-400 hover:text-white transition" title="Delete">
+                              <i class="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function createNewClient() {
+      const newId = 'c_' + Date.now();
+      const newClient = {
+        id: newId,
+        slug: 'new-profile-' + Date.now().toString().slice(-4), // Temporary, will be updated based on business name
+        status: 'draft',
+        activationDate: new Date().toISOString(),
+        renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+        renewalAmount: 999,
+        paymentStatus: 'paid',
+        basicInfo: { fullName: '', businessName: '', phone: '', whatsapp: '', email: '', website: '', bio: '', address: '', googleMapsUrl: '', openingHours: '', avatarUrl: '', logoUrl: '', theme: 'modern' },
+        socials: { instagram: '', facebook: '', youtube: '', linkedin: '', telegram: '' },
+        galleryConfig: { style: 'grid', captionVisible: true },
+        gallery: [], videos: [], services: [], products: [], links: [],
+        sectionOrder: JSON.parse(JSON.stringify(DEFAULT_SECTION_ORDER)),
+        analytics: { views: 0, leads: 0, clicks: 0 },
+        leads: []
+      };
+      try {
+        await saveClientToFirestore(newClient);
+        AppState.clients.push(newClient);
+      } catch (error) {
+        console.error('Could not create Firestore profile:', error);
+        showToast(`Could not save profile: ${error.message}`, 'error');
+        return;
+      }
+      AppState.activeClientTab = 'basic';
+      navigateTo('dashboard', 'client_builder', newId);
+      showToast('Draft profile created. Please fill in details.');
+    }
+
+    async function duplicateClient(id) {
+      const c = AppState.clients.find(x => x.id === id);
+      if (!c) return;
+      
+      const newId = 'c_' + Date.now();
+      const newClient = JSON.parse(JSON.stringify(c)); // Deep clone
+      
+      newClient.id = newId;
+      delete newClient._firestoreSlug;
+      newClient.slug = generateSlug(c.basicInfo.businessName + ' Copy');
+      newClient.basicInfo.businessName += ' (Copy)';
+      newClient.status = 'draft';
+      newClient.activationDate = new Date().toISOString();
+      newClient.renewalDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
+      newClient.paymentStatus = 'paid';
+      newClient.analytics = { views: 0, leads: 0, clicks: 0 };
+      newClient.leads = [];
+      
+      try {
+        await saveClientToFirestore(newClient);
+      } catch (error) {
+        console.error('Could not duplicate Firestore profile:', error);
+        showToast(`Could not duplicate profile: ${error.message}`, 'error');
+        return;
+      }
+      AppState.clients.push(newClient);
+      renderApp();
+      showToast('Client profile duplicated!');
+    }
+
+    async function deleteClient(id) {
+      if (confirm('Are you sure you want to completely delete this client? This cannot be undone.')) {
+        const client = AppState.clients.find(c => c.id === id);
+        try {
+          if (client) await clientsCollection.doc(client._firestoreSlug || client.slug).delete();
+        } catch (error) {
+          console.error('Could not delete Firestore profile:', error);
+          showToast(`Could not delete profile: ${error.message}`, 'error');
+          return;
+        }
+        AppState.clients = AppState.clients.filter(c => c.id !== id);
+        renderApp();
+        showToast('Client deleted permanently.', 'error');
+      }
+    }
+
+
+    function renderClientBuilderShell() {
+      const c = AppState.clients.find(x => x.id === AppState.currentClientId);
+      if (!c) return `<p class="text-white">Error: Client not found.</p><button onclick="navigateTo('dashboard', 'clients')" class="text-blue-400">Go Back</button>`;
+
+      const tabs = [
+        { id: 'basic', label: 'Basic Info', icon: 'fa-user' },
+        { id: 'media', label: 'Gallery & Video', icon: 'fa-images' },
+        { id: 'hub', label: 'Section Manager', icon: 'fa-layer-group' },
+        { id: 'catalogs', label: 'Services / Store', icon: 'fa-briefcase' },
+        { id: 'delivery', label: 'Delivery & Link', icon: 'fa-paper-plane' },
+        { id: 'settings', label: 'Status & Setup', icon: 'fa-gear' }
+      ];
+      const tCls = 'px-4 py-3 text-xs font-bold border-b-2 transition whitespace-nowrap';
+
+      return `
+        <div class="max-w-7xl mx-auto flex flex-col h-full overflow-hidden">
+          
+          <!-- Editor Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <button onclick="navigateTo('dashboard', 'clients')" class="text-slate-400 hover:text-white mr-2"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-xl font-black text-white">${c.basicInfo.businessName || 'Unnamed Profile'}</h2>
+                <span class="px-2 py-0.5 rounded-md border border-slate-600 bg-slate-800 text-[10px] font-bold text-slate-300 uppercase">${c.status}</span>
+              </div>
+              <p class="text-xs text-blue-400 font-mono bg-blue-900/30 px-2 py-1 rounded inline-block">/p/${c.slug}</p>
+            </div>
+            
+            <div class="flex gap-2">
+              <button onclick="window.open('${getBaseUrl()}/p/${c.slug}', '_blank')" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold text-xs text-white transition shadow-md flex items-center gap-2">
+                <i class="fa-solid fa-eye"></i> View Live
+              </button>
+              <button onclick="saveClientProfile()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white transition shadow-md shadow-emerald-600/30 flex items-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> Save Changes
+              </button>
+            </div>
+          </div>
+
+          <!-- Builder Navigation Tabs -->
+          <div class="border-b border-slate-800 flex overflow-x-auto hide-scrollbar shrink-0 mb-6">
+            ${tabs.map(t => `
+              <button onclick="AppState.activeClientTab = '${t.id}'; renderApp();" class="${tCls} ${AppState.activeClientTab === t.id ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}">
+                <i class="fa-solid ${t.icon} mr-1.5"></i> ${t.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Dynamic Tab Content -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar pb-10">
+            ${renderActiveClientTab(c)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActiveClientTab(c) {
+      switch(AppState.activeClientTab) {
+        case 'basic': return renderTabBasicInfo(c);
+        case 'media': return renderTabMedia(c);
+        case 'hub': return renderTabSectionManager(c); // Live preview goes here
+        case 'catalogs': return renderTabCatalogs(c);
+        case 'delivery': return renderTabDelivery(c);
+        case 'settings': return renderTabSettings(c);
+        default: return renderTabBasicInfo(c);
+      }
+    }
+
+    // Save helper logic
+    async function saveClientProfile() {
+      const c = AppState.clients.find(x => x.id === AppState.currentClientId);
+      if (!c) return showToast('Profile not found.', 'error');
+      
+      // Auto-generate slug if basic info changed and it's a draft or doesn't have a good one
+      if (c.basicInfo.businessName && c.slug.includes('new-profile')) {
+        c.slug = generateSlug(c.basicInfo.businessName);
+      }
+      
+      try {
+        await saveClientToFirestore(c);
+        showToast('Client profile saved successfully!');
+        renderApp();
+      } catch (error) {
+        console.error('Could not save Firestore profile:', error);
+        showToast(`Could not save profile: ${error.message}`, 'error');
+      }
+    }
+
+
+    function renderTabBasicInfo(c) {
+      const b = c.basicInfo;
+      return `
+        <div class="max-w-4xl space-y-6">
+          
+          <!-- Photo Upload Requirements Implementation -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-camera text-emerald-400"></i> Profile Photo & Logo</h3>
+            <p class="text-xs text-slate-400">This photo appears prominently at the top of the digital card and on the QR code page.</p>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-900 border border-slate-700/50 rounded-2xl">
+              <div class="relative w-28 h-28 rounded-full overflow-hidden border-4 border-slate-700 shadow-xl bg-slate-800 shrink-0 group">
+                <img id="avatar-preview" src="${b.avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(b.businessName || 'C') + '&background=0D8ABC&color=fff'}" class="w-full h-full object-cover transition duration-300" />
+                
+                <!-- Overlay for easy click-to-change -->
+                <div onclick="document.getElementById('avatar-upload').click()" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                  <i class="fa-solid fa-camera text-white mb-1"></i>
+                  <span class="text-[10px] text-white font-bold">Change</span>
+                </div>
+              </div>
+              
+              <div class="space-y-3 w-full sm:w-auto text-center sm:text-left">
+                <input type="file" id="avatar-upload" accept="image/*" class="hidden" onchange="handleProfilePhotoUpload(event, '${c.id}')"/>
+                <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+                  <button type="button" onclick="document.getElementById('avatar-upload').click()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white font-bold shadow-md transition">
+                    Upload Photo
+                  </button>
+                  <button type="button" onclick="document.getElementById('avatar-upload').click()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-white font-bold transition">
+                    Change Photo
+                  </button>
+                  <button type="button" onclick="removeProfilePhoto('${c.id}')" class="px-4 py-2 rounded-lg bg-rose-900/30 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/50 text-xs font-bold transition">
+                    Remove
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-500">Supported formats: JPG, PNG, WEBP. Recommended size: 400x400px. Image is automatically cropped circular.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Basic Details (No Slug, No Designation, No Category) -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-5">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Business Details</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+                <input type="text" value="${b.fullName}" oninput="updateClientField('${c.id}', 'fullName', this.value)" placeholder="e.g. Prachi Jain" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Business / Brand Name <span class="text-rose-400">*</span></label>
+                <input type="text" value="${b.businessName}" oninput="updateClientField('${c.id}', 'businessName', this.value)" placeholder="e.g. Netria Connect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Bio / About</label>
+              <textarea rows="3" oninput="updateClientField('${c.id}', 'bio', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Describe the business...">${b.bio}</textarea>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Phone Number</label>
+                <input type="text" value="${b.phone}" oninput="updateClientField('${c.id}', 'phone', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">WhatsApp Number</label>
+                <input type="text" value="${b.whatsapp}" oninput="updateClientField('${c.id}', 'whatsapp', this.value)" placeholder="e.g. 919876543210" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                <input type="email" value="${b.email}" oninput="updateClientField('${c.id}', 'email', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Website URL</label>
+                <input type="url" value="${b.website}" oninput="updateClientField('${c.id}', 'website', this.value)" placeholder="https://" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Business Hours (Optional)</label>
+                <input type="text" value="${b.openingHours}" oninput="updateClientField('${c.id}', 'openingHours', this.value)" placeholder="e.g. Mon-Fri 9AM to 6PM" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Physical Address</label>
+              <textarea rows="2" oninput="updateClientField('${c.id}', 'address', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">${b.address}</textarea>
+            </div>
+            
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Google Maps Link</label>
+              <input type="text" value="${b.googleMapsUrl}" oninput="updateClientField('${c.id}', 'googleMapsUrl', this.value)" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+            </div>
+          </div>
+
+          <!-- Social Media Integration -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-400"></i> Social Media Links</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${[
+                { id: 'instagram', label: 'Instagram', icon: 'fa-instagram text-pink-500' },
+                { id: 'facebook', label: 'Facebook', icon: 'fa-facebook text-blue-500' },
+                { id: 'youtube', label: 'YouTube', icon: 'fa-youtube text-red-500' },
+                { id: 'linkedin', label: 'LinkedIn', icon: 'fa-linkedin text-blue-400' },
+                { id: 'telegram', label: 'Telegram', icon: 'fa-telegram text-sky-400' }
+              ].map(s => `
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-2">
+                    <i class="fa-brands ${s.icon} text-sm w-4 text-center"></i> ${s.label}
+                  </label>
+                  <input type="url" value="${c.socials[s.id] || ''}" onchange="updateClientSocial('${c.id}', '${s.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="https://${s.id.toLowerCase()}.com/username"/>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    async function handleProfilePhotoUpload(event, clientId) {
+      const file = event.target.files[0];
+      const c = AppState.clients.find(x => x.id === clientId);
+      if (!file || !c) return;
+      if (file.size > 10 * 1024 * 1024) return showToast('Choose a photo smaller than 10 MB.', 'error');
+      try {
+        const photoRef = firebaseStorage.ref(`client-media/${c.id}/avatar-${Date.now()}-${file.name}`);
+        await photoRef.put(file);
+        c.basicInfo.avatarUrl = await photoRef.getDownloadURL();
+        document.getElementById('avatar-preview').src = c.basicInfo.avatarUrl;
+        showToast('Photo uploaded. Save Changes to publish the profile update.');
+      } catch (error) {
+        console.error('Could not upload profile photo:', error);
+        showToast(`Photo upload failed: ${error.message}`, 'error');
+      }
+    }
+
+    function removeProfilePhoto(clientId) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c.basicInfo.avatarUrl = '';
+      document.getElementById('avatar-preview').src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(c.basicInfo.businessName || 'C') + '&background=0D8ABC&color=fff';
+      showToast('Profile photo removed.');
+    }
+
+    function updateClientField(clientId, field, value) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c.basicInfo[field] = value;
+    }
+    
+    function updateClientSocial(clientId, field, value) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c.socials[field] = value;
+    }
+
+
+    function renderTabMedia(c) {
+      const gCount = c.gallery.length;
+      const gLimit = gCount >= 30;
+      const vCount = c.videos.length;
+      const vLimit = vCount >= 10;
+
+      return `
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <!-- GALLERY MANAGER -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-images text-emerald-400"></i> Gallery Manager</h3>
+                <p class="text-xs text-slate-400 mt-1">Upload direct images. Reorder and set layout style for public view.</p>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${gLimit ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-800 text-slate-300'}">
+                  ${gCount} / 30 Photos
+                </span>
+                <button onclick="openClientAddPhotoModal('${c.id}')" ${gLimit ? 'disabled' : ''} class="px-4 py-2 rounded-xl ${gLimit ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30'} font-bold text-xs flex items-center gap-2 transition">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Add Photos
+                </button>
+              </div>
+            </div>
+
+            ${gLimit ? `<div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300"><i class="fa-solid fa-circle-exclamation mr-1"></i> Gallery limit reached — 30/30. Delete images to add more.</div>` : ''}
+
+            <!-- Layout Selectors -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Layout Style:</span>
+                <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
+                  ${['grid', 'simple', 'large', 'masonry'].map(st => `
+                    <button onclick="setClientGalleryStyle('${c.id}', '${st}')" class="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition ${c.galleryConfig.style === st ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">${st}</button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              ${c.gallery.map((img, idx) => `
+                <div class="bg-slate-900 rounded-2xl border ${img.enabled===false ? 'border-slate-800 opacity-50' : 'border-slate-700'} overflow-hidden flex flex-col group relative">
+                  <div class="h-32 w-full bg-black relative">
+                    <img src="${img.url}" class="h-full w-full object-cover" />
+                    <!-- Action Overlay -->
+                    <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button onclick="toggleClientMediaState('${c.id}', 'gallery', ${idx})" class="w-7 h-7 rounded bg-slate-900/80 hover:bg-blue-600 text-white text-xs flex items-center justify-center backdrop-blur" title="Toggle Visibility">
+                        <i class="fa-solid ${img.enabled===false ? 'fa-eye-slash text-rose-400' : 'fa-eye'}"></i>
+                      </button>
+                      <button onclick="deleteClientMedia('${c.id}', 'gallery', '${img.id}')" class="w-7 h-7 rounded bg-slate-900/80 hover:bg-rose-600 text-white text-xs flex items-center justify-center backdrop-blur" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="p-3 flex-1 flex flex-col justify-between border-t border-slate-800">
+                    <div class="space-y-1 mb-2">
+                      <input type="text" value="${img.title || ''}" placeholder="Title (Optional)" onchange="updateClientMediaField('${c.id}','gallery',${idx},'title',this.value)" class="w-full bg-transparent text-[11px] font-bold text-white border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-0.5"/>
+                      <input type="text" value="${img.caption || ''}" placeholder="Caption (Optional)" onchange="updateClientMediaField('${c.id}','gallery',${idx},'caption',this.value)" class="w-full bg-transparent text-[9px] text-slate-400 border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-0.5"/>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto pt-2 border-t border-slate-800/50">
+                      <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Order</span>
+                      <div class="flex gap-1">
+                        <button onclick="reorderClientMedia('${c.id}', 'gallery', ${idx}, -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] flex items-center justify-center ${idx===0?'invisible':''}"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button onclick="reorderClientMedia('${c.id}', 'gallery', ${idx}, 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] flex items-center justify-center ${idx===c.gallery.length-1?'invisible':''}"><i class="fa-solid fa-arrow-right"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- VIDEO MANAGER -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-circle-play text-rose-400"></i> Video Showcase</h3>
+                <p class="text-xs text-slate-400 mt-1">Upload videos or paste links (YouTube/Vimeo).</p>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${vLimit ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-800 text-slate-300'}">
+                  ${vCount} / 10 Videos
+                </span>
+                <button onclick="openClientAddVideoModal('${c.id}')" ${vLimit ? 'disabled' : ''} class="px-4 py-2 rounded-xl ${vLimit ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30'} font-bold text-xs flex items-center gap-2 transition">
+                  <i class="fa-solid fa-plus"></i> Add Video
+                </button>
+              </div>
+            </div>
+
+            ${vLimit ? `<div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300"><i class="fa-solid fa-circle-exclamation mr-1"></i> Video limit reached — 10/10. Delete videos to add more.</div>` : ''}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${c.videos.map((v, idx) => `
+                <div class="bg-slate-900 rounded-2xl border ${v.enabled===false ? 'border-slate-800 opacity-50' : 'border-slate-700'} overflow-hidden relative group">
+                  <div class="h-44 w-full bg-black relative">
+                    ${v.embedUrl ? `<iframe src="${v.embedUrl}" class="w-full h-full pointer-events-none" frameborder="0"></iframe>` : `<video src="${v.url}" class="w-full h-full object-cover"></video>`}
+                  </div>
+                  
+                  <div class="p-4 space-y-2">
+                    <input type="text" value="${v.title}" placeholder="Video Title" onchange="updateClientMediaField('${c.id}','videos',${idx},'title',this.value)" class="w-full bg-transparent text-xs font-bold text-white border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-1"/>
+                    <input type="text" value="${v.description || ''}" placeholder="Description" onchange="updateClientMediaField('${c.id}','videos',${idx},'description',this.value)" class="w-full bg-transparent text-[10px] text-slate-400 border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-1"/>
+                    
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-800 mt-2">
+                      <div class="flex gap-1">
+                        <button onclick="reorderClientMedia('${c.id}', 'videos', ${idx}, -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] ${idx===0?'invisible':''}"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button onclick="reorderClientMedia('${c.id}', 'videos', ${idx}, 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] ${idx===c.videos.length-1?'invisible':''}"><i class="fa-solid fa-arrow-right"></i></button>
+                      </div>
+                      <div class="flex gap-2">
+                        <button onclick="toggleClientMediaState('${c.id}', 'videos', ${idx})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-white">${v.enabled===false ? 'Enable' : 'Disable'}</button>
+                        <button onclick="deleteClientMedia('${c.id}', 'videos', '${v.id}')" class="px-2 py-1 rounded bg-rose-900/30 text-rose-400 hover:bg-rose-800 hover:text-white text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // Media Logic Controllers
+    function setClientGalleryStyle(clientId, style) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c.galleryConfig.style = style;
+      renderApp();
+    }
+
+    function toggleClientMediaState(clientId, type, idx) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c[type][idx].enabled = c[type][idx].enabled === false ? true : false;
+      renderApp();
+    }
+
+    function deleteClientMedia(clientId, type, id) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c[type] = c[type].filter(m => m.id !== id);
+      renderApp();
+    }
+
+    function updateClientMediaField(clientId, type, idx, field, value) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c[type][idx][field] = value;
+      // No re-render needed for text inputs if bound correctly, but doing it to ensure sync
+      renderApp(); 
+    }
+
+    function reorderClientMedia(clientId, type, idx, direction) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const arr = c[type];
+      const target = idx + direction;
+      if (target >= 0 && target < arr.length) {
+        const temp = arr[idx];
+        arr[idx] = arr[target];
+        arr[target] = temp;
+        renderApp();
+      }
+    }
+
+    // Modal: Gallery Upload
+    function openClientAddPhotoModal(clientId) {
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+            <h3 class="font-bold text-white text-base"><i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-2"></i> Upload to Gallery</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="border-2 border-dashed border-slate-600 rounded-2xl p-10 text-center hover:border-emerald-500 hover:bg-slate-800/50 transition cursor-pointer" onclick="document.getElementById('gallery-upload-input').click()">
+            <i class="fa-solid fa-images text-4xl text-emerald-400 mb-3"></i>
+            <p class="text-sm font-bold text-white">Click to Select Photos</p>
+            <p class="text-[10px] text-emerald-400 mt-3 font-semibold bg-emerald-500/10 inline-block px-3 py-1 rounded-full border border-emerald-500/20">Max limit: 30 images</p>
+          </div>
+          <input type="file" id="gallery-upload-input" multiple accept="image/*" class="hidden" onchange="handleClientGalleryFiles(event, '${clientId}')" />
+        </div>
+      `);
+    }
+
+    function handleClientGalleryFiles(event, clientId) {
+      const files = event.target.files;
+      if (!files.length) return;
+      const c = AppState.clients.find(x => x.id === clientId);
+      
+      if (c.gallery.length + files.length > 30) {
+        showToast(`Cannot add ${files.length} photos. Limit is 30.`, 'error');
+        closeModal();
+        return;
+      }
+
+      let loadedCount = 0;
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          c.gallery.push({ id: 'img_' + Date.now() + Math.random(), url: e.target.result, title: '', caption: '', enabled: true });
+          loadedCount++;
+          if (loadedCount === files.length) {
+            closeModal();
+            renderApp();
+            showToast(`${files.length} photo(s) added!`);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Modal: Video Link / Upload
+    function openClientAddVideoModal(clientId) {
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+            <h3 class="font-bold text-white text-base"><i class="fa-solid fa-play text-rose-400 mr-2"></i> Add Video</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          
+          <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700 mb-2">
+            <button id="tab-vlink" onclick="document.getElementById('sec-vlink').classList.remove('hidden'); document.getElementById('sec-vupload').classList.add('hidden'); this.classList.add('bg-slate-700','text-white'); this.classList.remove('text-slate-400'); document.getElementById('tab-vupload').classList.remove('bg-slate-700','text-white'); document.getElementById('tab-vupload').classList.add('text-slate-400');" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-700 text-white">Paste URL</button>
+            <button id="tab-vupload" onclick="document.getElementById('sec-vupload').classList.remove('hidden'); document.getElementById('sec-vlink').classList.add('hidden'); this.classList.add('bg-slate-700','text-white'); this.classList.remove('text-slate-400'); document.getElementById('tab-vlink').classList.remove('bg-slate-700','text-white'); document.getElementById('tab-vlink').classList.add('text-slate-400');" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-lg transition">Upload File</button>
+          </div>
+
+          <form onsubmit="event.preventDefault(); submitClientVideo('${clientId}');" class="space-y-3">
+            
+            <div id="sec-vlink" class="block space-y-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">YouTube / Vimeo URL <span class="text-rose-400">*</span></label>
+                <input id="modal-vid-url" type="url" placeholder="https://youtube.com/watch?v=..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-blue-500"/>
+              </div>
+            </div>
+
+            <div id="sec-vupload" class="hidden">
+              <div class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-rose-500 hover:bg-slate-800/50 transition cursor-pointer" onclick="document.getElementById('vid-file').click()">
+                <i class="fa-solid fa-file-video text-2xl text-rose-400 mb-2"></i>
+                <p class="text-xs font-bold text-white">Select Video File</p>
+                <p id="vid-file-name" class="text-[10px] text-slate-400 mt-1 truncate max-w-[200px] mx-auto"></p>
+              </div>
+              <input type="file" id="vid-file" accept="video/*" class="hidden" onchange="if(this.files[0]) document.getElementById('vid-file-name').innerText = this.files[0].name;" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Video Title <span class="text-rose-400">*</span></label>
+              <input id="modal-vid-title" type="text" required placeholder="e.g. Brand Presentation" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-blue-500"/>
+            </div>
+            
+            <div class="pt-3 border-t border-slate-700 flex justify-end gap-2">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-slate-200 text-xs font-bold">Cancel</button>
+              <button type="submit" class="px-5 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-600/30">Add Video</button>
+            </div>
+          </form>
+        </div>
+      `);
+    }
+
+    async function submitClientVideo(clientId) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const isUpload = !document.getElementById('sec-vupload').classList.contains('hidden');
+      const title = document.getElementById('modal-vid-title').value;
+      
+      let url = '';
+      let embedUrl = '';
+
+      if (isUpload) {
+        const fileInput = document.getElementById('vid-file');
+        if (!fileInput.files.length) { showToast('Please select a video file.', 'error'); return; }
+        const file = fileInput.files[0];
+        if (file.size > 100 * 1024 * 1024) { showToast('Choose a video smaller than 100 MB.', 'error'); return; }
+        try {
+          const videoRef = firebaseStorage.ref(`client-media/${c.id}/video-${Date.now()}-${file.name}`);
+          await videoRef.put(file);
+          url = await videoRef.getDownloadURL();
+        } catch (error) {
+          console.error('Could not upload video:', error);
+          showToast(`Video upload failed: ${error.message}`, 'error');
+          return;
+        }
+      } else {
+        url = document.getElementById('modal-vid-url').value;
+        if (!url) { showToast('Please enter a valid link.', 'error'); return; }
+        
+        // Basic parser for YouTube to make it embeddable
+        if (url.includes('youtube.com/watch?v=')) {
+          const id = url.split('v=')[1]?.split('&')[0];
+          embedUrl = `https://www.youtube.com/embed/${id}`;
+        } else if (url.includes('youtu.be/')) {
+          const id = url.split('youtu.be/')[1]?.split('?')[0];
+          embedUrl = `https://www.youtube.com/embed/${id}`;
+        } else if (url.includes('youtube.com/shorts/')) {
+           const id = url.split('shorts/')[1]?.split('?')[0];
+           embedUrl = `https://www.youtube.com/embed/${id}`;
+        } else {
+           embedUrl = url; 
+        }
+      }
+
+      c.videos.push({ id: 'vid_' + Date.now(), type: isUpload ? 'upload' : 'url', url, title, embedUrl, enabled: true });
+      closeModal();
+      renderApp();
+      showToast('Video added to profile!');
+    }
+
+
+    function renderTabSectionManager(c) {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full max-w-6xl mx-auto">
+          
+          <!-- Left: Section Manager Data -->
+          <div class="lg:col-span-7 space-y-6 flex flex-col">
+            <div>
+              <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="fa-solid fa-layer-group text-blue-400"></i> Section Manager</h2>
+              <p class="text-xs text-slate-400 mt-1">Control the exact vertical flow of the public profile. Drag up/down to reorder. Use the eye icon to hide sections.</p>
+            </div>
+
+            <div class="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 flex-1 overflow-y-auto hide-scrollbar space-y-2.5">
+              ${c.sectionOrder.map((sec, idx) => `
+                <div class="glass-card p-3 rounded-xl border ${sec.enabled ? 'border-slate-700 bg-slate-800/40' : 'border-slate-800 bg-slate-900/50 opacity-60'} flex items-center justify-between transition group">
+                  <div class="flex items-center gap-3">
+                    <!-- Ordering Handles -->
+                    <div class="flex flex-col gap-0.5 opacity-50 group-hover:opacity-100 transition">
+                      <button onclick="reorderClientSection('${c.id}', ${idx}, -1)" class="p-1 text-[10px] bg-slate-800 hover:bg-blue-600 hover:text-white rounded text-slate-400 ${idx===0?'invisible':''}" title="Move Up"><i class="fa-solid fa-chevron-up"></i></button>
+                      <button onclick="reorderClientSection('${c.id}', ${idx}, 1)" class="p-1 text-[10px] bg-slate-800 hover:bg-blue-600 hover:text-white rounded text-slate-400 ${idx===c.sectionOrder.length-1?'invisible':''}" title="Move Down"><i class="fa-solid fa-chevron-down"></i></button>
+                    </div>
+                    
+                    <div class="w-8 h-8 rounded-lg ${sec.color || 'bg-slate-700'} flex items-center justify-center text-white text-xs shadow-inner shrink-0">
+                      <i class="fa-solid ${getSectionIcon(sec.type)}"></i>
+                    </div>
+                    
+                    <div>
+                      <span class="text-sm font-bold text-white block">${sec.title}</span>
+                      <span class="text-[9px] text-slate-500 uppercase tracking-wider block">${sec.type} Block</span>
+                    </div>
+                  </div>
+
+                  <button onclick="toggleClientSection('${c.id}', '${sec.id}')" class="w-9 h-9 rounded-lg flex items-center justify-center text-sm transition ${sec.enabled ? 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20' : 'text-slate-600 bg-slate-800 hover:text-slate-400'}" title="${sec.enabled ? 'Hide from Profile' : 'Show on Profile'}">
+                    <i class="fa-solid ${sec.enabled ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Right: Live Mobile Frame Preview -->
+          <div class="lg:col-span-5 flex justify-center sticky top-0 py-4">
+            <div class="relative">
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold border border-emerald-500/30 flex items-center gap-1 shadow-lg backdrop-blur-md">
+                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
+                Live Preview
+              </div>
+              <div class="mobile-frame scale-[0.85] origin-top bg-slate-900 border-[10px] border-slate-800 shadow-2xl">
+                <div class="mobile-notch"></div>
+                <!-- The dynamically injected iframe/container -->
+                <div id="live-preview-container" class="w-full h-full overflow-y-auto hide-scrollbar bg-slate-900">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getSectionIcon(type) {
+      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
+      return map[type] || 'fa-cube';
+    }
+
+    function reorderClientSection(clientId, idx, direction) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const target = idx + direction;
+      if (target >= 0 && target < c.sectionOrder.length) {
+        const temp = c.sectionOrder[idx];
+        c.sectionOrder[idx] = c.sectionOrder[target];
+        c.sectionOrder[target] = temp;
+        renderApp();
+      }
+    }
+
+    function toggleClientSection(clientId, secId) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const sec = c.sectionOrder.find(s => s.id === secId);
+      if (sec) {
+        sec.enabled = !sec.enabled;
+        renderApp();
+      }
+    }
+
+    function initClientPreviewSync() {
+      const container = document.getElementById('live-preview-container');
+      if (container && AppState.currentClientId) {
+        // Generate the exact same HTML that the public profile uses
+        container.innerHTML = `<div class="theme-${AppState.clients.find(c=>c.id===AppState.currentClientId).basicInfo.theme || 'modern'} min-h-full pb-8 pointer-events-none">${generatePublicProfileHTML(AppState.currentClientId, true)}</div>`;
+      }
+    }
+
+
+    function renderTabDelivery(c) {
+      const url = `${getBaseUrl()}/p/${c.slug}`;
+      const rInfo = getRenewalStatusInfo(c);
+
+      // Pre-filled WhatsApp Delivery Message
+      const waMessage = encodeURIComponent(`Hello ${c.basicInfo.fullName} 👋\n\nYour Netria Connect digital profile is ready!\n\n🔗 Your Profile Link:\n${url}\n\nYou can share this link with your customers, or use the QR code on visiting cards & posters.\n\nThank you,\nNetria Connect Admin`);
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-6">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Delivery Card -->
+            <div class="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col items-center text-center space-y-4">
+              <div class="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-3xl mb-2">
+                <i class="fa-solid fa-paper-plane"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-black text-white">Client Handover</h3>
+                <p class="text-xs text-slate-400 mt-1">Deliver the finished profile link to the client.</p>
+              </div>
+              <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 w-full text-left">
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Permanent Public URL</p>
+                <a href="${url}" target="_blank" class="text-sm font-semibold text-blue-400 hover:underline break-all block">${url}</a>
+              </div>
+              <div class="flex gap-2 w-full pt-2">
+                <button onclick="copyToClipboard('${url}')" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-copy"></i> Copy Link
+                </button>
+                <a href="https://wa.me/${c.basicInfo.whatsapp}?text=${waMessage}" target="_blank" class="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-2">
+                  <i class="fa-brands fa-whatsapp text-sm"></i> Send on WA
+                </a>
+              </div>
+            </div>
+
+            <!-- QR Code Card -->
+            <div class="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col items-center text-center">
+              <h3 class="text-lg font-black text-white mb-4">Profile QR Code</h3>
+              <div class="bg-white p-3 rounded-2xl shadow-lg border-4 border-blue-600">
+                <div id="qr-client-canvas"></div>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-4 mb-4">Points permanently to: <br/>/p/${c.slug}</p>
+              <button class="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download"></i> Download PNG
+              </button>
+            </div>
+          </div>
+
+          <!-- Renewal Details -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4 mt-6">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+              <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Renewal & Payment Tracker
+            </h3>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700">
+                <span class="text-[10px] text-slate-500 font-bold uppercase block mb-1">Status</span>
+                ${rInfo.tag}
+              </div>
+              <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700">
+                <span class="text-[10px] text-slate-500 font-bold uppercase block mb-1">Renewal Date</span>
+                <span class="text-sm font-black text-white">${rInfo.renewalDateStr}</span>
+              </div>
+              <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700">
+                <span class="text-[10px] text-slate-500 font-bold uppercase block mb-1">Amount</span>
+                <span class="text-sm font-black text-white">₹${c.renewalAmount}</span>
+              </div>
+              <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex flex-col justify-center">
+                <button onclick="markAsPaid('${c.id}')" class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold shadow-md">Mark as Paid</button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      `;
+    }
+
+    // Must draw QR slightly after render
+    const origRenderTabDelivery = renderTabDelivery;
+    renderTabDelivery = function(c) {
+      setTimeout(() => {
+        const qrel = document.getElementById('qr-client-canvas');
+        if (qrel) {
+          qrel.innerHTML = '';
+          new QRCode(qrel, { text: `${getBaseUrl()}/p/${c.slug}`, width: 140, height: 140, colorDark: "#0f172a", colorLight: "#ffffff" });
+        }
+      }, 50);
+      return origRenderTabDelivery(c);
+    };
+
+    function renderTabSettings(c) {
+      return `
+        <div class="max-w-3xl space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-5">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider border-b border-slate-800 pb-3">Visibility & Status</h3>
+            
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-2">Profile Status</label>
+              <select onchange="updateClientField('${c.id}', 'status', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-blue-500">
+                <option value="draft" ${c.status==='draft'?'selected':''}>Draft (Hidden)</option>
+                <option value="active" ${c.status==='active'?'selected':''}>Active (Public Live)</option>
+                <option value="inactive" ${c.status==='inactive'?'selected':''}>Inactive (Shows Unavailable Msg)</option>
+                <option value="archived" ${c.status==='archived'?'selected':''}>Archived (Hidden from main list)</option>
+              </select>
+              <p class="text-[10px] text-slate-500 mt-2">Changing to 'Inactive' will show a temporary unavailable message to visitors. The URL slug remains reserved.</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    // Minimal mock for Catalogs
+    function renderTabCatalogs(c) {
+      return `<div class="max-w-4xl glass-card p-8 rounded-3xl text-center"><i class="fa-solid fa-boxes-stacked text-4xl text-slate-600 mb-4"></i><h3 class="text-lg font-bold text-white">Services & Products Module</h3><p class="text-xs text-slate-400 mt-2">Full implementation available in production build. Allows adding catalogs with direct WhatsApp checkout buttons.</p></div>`;
+    }
+
+
+    function renderRenewalDashboard() {
+      let allRenewals = AppState.clients.map(c => ({ client: c, info: getRenewalStatusInfo(c) }));
+      
+      // Sort by urgency (Overdue -> Due -> Paid)
+      allRenewals.sort((a,b) => {
+        const priority = { overdue: 1, due: 2, paid: 3 };
+        return priority[a.info.status] - priority[b.info.status];
+      });
+
+      return `
+        <div class="max-w-6xl mx-auto space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div>
+              <h1 class="text-2xl font-black text-white"><i class="fa-solid fa-clock-rotate-left text-amber-400 mr-2"></i> Renewal Tracking</h1>
+              <p class="text-xs text-slate-400 mt-1">Manage 365-day client subscriptions and payment reminders.</p>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-3xl border border-slate-800 overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Client</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Renewal Date</th>
+                  <th class="p-4">Amount</th>
+                  <th class="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${allRenewals.map(r => `
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-4">
+                      <div class="font-bold text-white text-sm">${r.client.basicInfo.businessName}</div>
+                      <div class="text-[10px] text-slate-400">${r.client.basicInfo.fullName} • ${r.client.basicInfo.phone}</div>
+                    </td>
+                    <td class="p-4">${r.info.tag}</td>
+                    <td class="p-4 font-semibold text-slate-200">${r.info.renewalDateStr}</td>
+                    <td class="p-4 font-bold text-white">₹${r.client.renewalAmount}</td>
+                    <td class="p-4">
+                      <div class="flex items-center justify-end gap-2">
+                        ${r.info.status !== 'paid' ? `
+                          <button onclick="sendWhatsAppReminder('${r.client.id}')" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] transition shadow-md shadow-green-600/20">
+                            <i class="fa-brands fa-whatsapp"></i> Remind
+                          </button>
+                          <button onclick="markAsPaid('${r.client.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition">
+                            Mark Paid
+                          </button>
+                          <button onclick="showToast('Reminder snoozed for 3 days.')" class="px-2 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] transition" title="Snooze">
+                            <i class="fa-regular fa-clock"></i>
+                          </button>
+                        ` : `
+                          <span class="text-[10px] text-slate-500 font-bold bg-slate-900 px-2 py-1 rounded">No Action Needed</span>
+                        `}
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function sendWhatsAppReminder(clientId) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const rInfo = getRenewalStatusInfo(c);
+      const url = `${getBaseUrl()}/p/${c.slug}`;
+      const msg = encodeURIComponent(`Hello ${c.basicInfo.fullName} 👋\n\nYour Netria Connect digital profile renewal is ${rInfo.status==='overdue'?'OVERDUE':'due on'} ${rInfo.renewalDateStr}.\n\n🔗 Your Profile:\n${url}\n\n💰 Renewal Amount: ₹${c.renewalAmount}\n\nPlease contact us for renewal.\n📞 Admin\n\nThank you for choosing Netria Connect.`);
+      window.open(`https://wa.me/${c.basicInfo.whatsapp}?text=${msg}`, '_blank');
+      showToast('WhatsApp reminder opened.');
+    }
+
+    function markAsPaid(clientId) {
+      if (confirm('Confirm marking this profile renewal as Paid? Next renewal date will be advanced by 365 days.')) {
+        const c = AppState.clients.find(x => x.id === clientId);
+        c.paymentStatus = 'paid';
+        
+        // Advance renewal date by 365 days
+        const curDate = new Date(c.renewalDate);
+        curDate.setFullYear(curDate.getFullYear() + 1);
+        c.renewalDate = curDate.toISOString();
+        
+        renderApp();
+        showToast('Payment marked as paid. Renewal date updated.', 'success');
+      }
+    }
+
+
+    function renderPublicProfileEngine() {
+      const slug = AppState.publicSlug;
+      const targetClient = AppState.clients.find(c => c.slug === slug || c._firestoreSlug === slug);
+
+      if (!targetClient) return `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white"><div class="text-center"><h1 class="text-2xl font-bold">Profile Not Found</h1><p class="text-slate-400 mt-2">This profile link may be incorrect or the profile is not published.</p></div></div>`;
+
+      if (targetClient.status === 'draft' || targetClient.status === 'archived') {
+        return `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white"><div class="text-center"><h1 class="text-2xl font-bold">Profile Not Published</h1><p class="text-slate-400 mt-2">This profile is not currently public.</p></div></div>`;
+      }
+
+      // Check Status
+      if (targetClient.status === 'inactive') {
+         return `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white"><div class="text-center p-8 bg-slate-900 rounded-3xl border border-slate-800"><h1 class="text-2xl font-bold">Temporarily Unavailable</h1><p class="text-slate-400 mt-2">This digital profile is currently inactive.</p></div></div>`;
+      }
+
+      return `
+        <div class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
+          <!-- Floating Admin Back Button (For Demo Purposes) -->
+          <button onclick="navigateTo('dashboard', 'clients')" class="fixed top-4 left-4 z-50 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 text-white font-bold text-xs shadow-xl hover:bg-black/80 transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Admin Dash
+          </button>
+
+          <div class="max-w-md w-full">
+            ${generatePublicProfileHTML(targetClient.id, false)}
+          </div>
+        </div>
+      `;
+    }
+
+    // Extracted HTML generation for reusability in Live Preview and Public Page
+    function generatePublicProfileHTML(clientId, isPreview = false) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const b = c.basicInfo;
+      let html = `<div class="space-y-4 ${isPreview ? 'p-3' : 'pb-12'}">`;
+
+      // STRICTLY Iterate over the SectionOrder controlled by the Section Manager
+      c.sectionOrder.filter(sec => sec.enabled).forEach(block => {
+        switch(block.type) {
+          
+          case 'ProfilePhoto':
+            html += `<div class="text-center pt-2"><img src="${b.avatarUrl || 'https://ui-avatars.com/api/?name=C'}" class="w-24 h-24 rounded-full mx-auto border-4 border-blue-500 object-cover shadow-xl" /></div>`;
+            break;
+            
+          case 'FullName':
+            html += `<h1 class="text-2xl font-extrabold tracking-tight text-center leading-tight">${b.fullName}</h1>`;
+            break;
+            
+          case 'BusinessName':
+            html += `<p class="text-sm font-bold text-blue-400 text-center -mt-2">${b.businessName}</p>`;
+            break;
+            
+          case 'Bio':
+            if (b.bio) html += `<p class="text-[11px] opacity-90 leading-relaxed px-4 py-3 bg-black/20 rounded-2xl border border-white/10 text-center shadow-inner">${b.bio}</p>`;
+            break;
+
+          // Social & Action Buttons
+          case 'WhatsApp':
+            if(b.whatsapp) html += renderPublicBtn(block, `https://wa.me/${b.whatsapp}`, true);
+            break;
+          case 'Call':
+            if(b.phone) html += renderPublicBtn(block, `tel:${b.phone}`);
+            break;
+          case 'Email':
+            if(b.email) html += renderPublicBtn(block, `mailto:${b.email}`);
+            break;
+          case 'Website':
+            if(b.website) html += renderPublicBtn(block, b.website);
+            break;
+          case 'Instagram':
+            if(c.socials.instagram) html += renderPublicBtn(block, c.socials.instagram, true);
+            break;
+          case 'Facebook':
+            if(c.socials.facebook) html += renderPublicBtn(block, c.socials.facebook, true);
+            break;
+          case 'YouTube':
+            if(c.socials.youtube) html += renderPublicBtn(block, c.socials.youtube, true);
+            break;
+
+          case 'vCard':
+            html += `
+              <button onclick="${isPreview ? '' : 'downloadVCard()'}" class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-90 text-white font-extrabold text-sm shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-address-card text-lg"></i> Save Contact (.vcf)
+              </button>
+            `;
+            break;
+
+          // Gallery Engine with Layout Support
+          case 'Gallery':
+            const gv = c.gallery.filter(g => g.enabled !== false);
+            if (gv.length > 0) {
+              let layoutCls = 'grid grid-cols-2 gap-2'; // Default grid
+              let gHtml = gv.map(g => `<img src="${g.url}" class="w-full aspect-square object-cover rounded-xl shadow-sm border border-white/10"/>`).join('');
+              
+              if (c.galleryConfig.style === 'simple') { 
+                layoutCls = 'flex flex-col gap-3'; 
+                gHtml = gv.map(g => `<img src="${g.url}" class="w-full h-auto object-cover rounded-2xl shadow-md border border-white/10"/>`).join(''); 
+              }
+              else if (c.galleryConfig.style === 'large') { 
+                layoutCls = 'flex flex-col gap-4'; 
+                gHtml = gv.map(g => `<div class="rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-md"><img src="${g.url}" class="w-full h-auto object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-4"><p class="font-bold text-sm text-white">${g.title}</p>${g.caption ? `<p class="text-xs opacity-70 mt-1">${g.caption}</p>` : ''}</div>` : ''}</div>`).join(''); 
+              }
+              else if (c.galleryConfig.style === 'masonry') { 
+                layoutCls = 'masonry-grid'; 
+                gHtml = gv.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join(''); 
+              }
+
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${block.title}</h3><div class="${layoutCls}">${gHtml}</div></div>`;
+            }
+            break;
+
+          // Videos Showcase
+          case 'Videos':
+            const vv = c.videos.filter(v => v.enabled !== false);
+            if (vv.length > 0) {
+              const vHtml = vv.map(v => `
+                <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 bg-black/40 shadow-md">
+                  ${v.embedUrl ? `<iframe src="${v.embedUrl}" class="w-full aspect-video" frameborder="0" allowfullscreen></iframe>` : `<video src="${v.url}" controls class="w-full aspect-video"></video>`}
+                  <div class="p-4"><h4 class="font-bold text-sm text-white">${v.title}</h4>${v.description ? `<p class="text-xs opacity-70 mt-1">${v.description}</p>` : ''}</div>
+                </div>
+              `).join('');
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3><div>${vHtml}</div></div>`;
+            }
+            break;
+
+          // Map & Hours
+          case 'Map':
+            if (b.address || b.googleMapsUrl || b.openingHours) {
+              html += `
+                <div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3 text-sm">
+                  <h3 class="font-bold flex items-center gap-2 mb-3 text-white"><i class="fa-solid fa-location-dot text-rose-400"></i> ${block.title}</h3>
+                  ${b.address ? `<p class="opacity-90 leading-relaxed text-xs">${b.address}</p>` : ''}
+                  ${b.openingHours ? `<div class="flex items-center gap-2 mt-3 bg-blue-500/20 text-blue-300 font-bold px-3 py-2 rounded-xl text-xs border border-blue-500/30"><i class="fa-solid fa-clock"></i> ${b.openingHours}</div>` : ''}
+                  ${b.googleMapsUrl ? `<a href="${b.googleMapsUrl}" target="_blank" class="flex items-center justify-center gap-2 mt-3 w-full py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold transition border border-white/10 shadow-md"><i class="fa-solid fa-map-marked-alt"></i> Navigate on Maps</a>` : ''}
+                </div>
+              `;
+            }
+            break;
+
+          // Contact Form
+          case 'ContactForm':
+            html += `
+              <div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">
+                <h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-paper-plane text-cyan-400"></i> Send Enquiry</h3>
+                <form class="space-y-3">
+                  <input type="text" placeholder="Your Name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+                  <input type="text" placeholder="Mobile / WhatsApp" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+                  <textarea rows="2" placeholder="Message..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                  <button type="button" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-md">Submit Enquiry</button>
+                </form>
+              </div>
+            `;
+            break;
+        }
+      });
+
+      html += `<div class="text-center pt-8 border-t border-white/10 mt-6"><span class="text-[10px] opacity-50 uppercase tracking-widest font-bold">Powered by <strong>Netria Connect</strong></span></div></div>`;
+      return html;
+    }
+
+    function renderPublicBtn(block, url, isBrand = false) {
+      const iCls = isBrand ? `fa-brands ${getSectionIcon(block.type)}` : `fa-solid ${getSectionIcon(block.type)}`;
+      const cCls = block.color || 'bg-slate-800';
+      return `
+        <a href="${url}" target="_blank" class="w-full py-3.5 px-5 rounded-2xl ${cCls} text-white flex items-center justify-between shadow-lg transition transform active:scale-95 mb-2 hover:brightness-110">
+          <div class="flex items-center gap-4">
+            <div class="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center"><i class="${iCls} text-lg"></i></div>
+            <span class="font-bold text-sm tracking-wide drop-shadow-md">${block.title}</span>
+          </div>
+          <i class="fa-solid fa-chevron-right opacity-50 text-xs"></i>
+        </a>
+      `;
+    }
+
+
+    // INIT APP
+    window.onload = async function() {
+      const pathMatch = window.location.pathname.match(/^\/p\/([^/]+)\/?$/);
+      if (pathMatch) {
+        const slug = decodeURIComponent(pathMatch[1]);
+        AppState.publicSlug = slug;
+        AppState.clients = [];
+        AppState.currentView = 'public-profile';
+        document.getElementById('view-viewport').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading profile…</div>`;
+        try {
+          const snapshot = await clientsCollection.doc(slug).get();
+          if (snapshot.exists) AppState.clients = [{ ...snapshot.data(), id: snapshot.data().id || snapshot.id, _firestoreSlug: snapshot.id }];
+        } catch (error) {
+          console.error('Could not load public profile:', error);
+        }
+        renderApp();
+        return;
+      }
+      navigateTo('login');
+    };
+
+  </script>
+</body>
+</html>

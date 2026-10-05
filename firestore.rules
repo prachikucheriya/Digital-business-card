@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /clients/{slug} {
+      // Anyone can open a published profile link; dashboard users can load drafts.
+      allow get: if request.auth != null || resource.data.status == 'active';
+      allow list: if request.auth != null;
+      // Enable Email/Password Authentication and create dashboard accounts in Firebase.
+      allow create, update, delete: if request.auth != null;
+    }
+  }
+}

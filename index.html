@@ -106,6 +106,11 @@
       z-index: 50;
     }
 
+    /* Compact, colorful links on public business profiles */
+    .social-icon-link { display:inline-flex !important; width:56px; height:56px; align-items:center; justify-content:center; margin:0 .65rem .5rem 0 !important; padding:0 !important; border:2px solid rgba(15,23,42,.9); border-radius:16px; background:#fff; color:#111827; box-shadow:5px 5px 0 #111827; vertical-align:middle; }
+    .social-icon-link i { font-size:1.45rem; }
+    .social-icon-link:hover { transform:translateY(-2px); }
+
     /* Public Profile Themes */
     .theme-modern { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #f8fafc; }
     .theme-minimal { background: #ffffff; color: #0f172a; }
@@ -1804,7 +1809,7 @@
             if(b.email) html += renderPublicBtn(block, `mailto:${b.email}`);
             break;
           case 'Website':
-            if(b.website) html += renderPublicBtn(block, b.website);
+            if(b.website) html += renderPublicBtn(block, b.website, true);
             break;
           case 'Instagram':
             if(c.socials.instagram) html += renderPublicBtn(block, c.socials.instagram, true);
@@ -1898,10 +1903,20 @@
     }
 
     function renderPublicBtn(block, url, isBrand = false) {
-      const iCls = isBrand ? `fa-brands ${getSectionIcon(block.type)}` : `fa-solid ${getSectionIcon(block.type)}`;
+      const iconByType = {
+        Website: ['fa-solid', 'fa-globe', '#111827'], Instagram: ['fa-brands', 'fa-instagram', '#e1306c'],
+        Facebook: ['fa-brands', 'fa-facebook-f', '#1877f2'], YouTube: ['fa-brands', 'fa-youtube', '#ff0000'],
+        LinkedIn: ['fa-brands', 'fa-linkedin-in', '#0a66c2'], Telegram: ['fa-brands', 'fa-telegram', '#229ed9']
+      };
+      const socialIcon = isBrand ? iconByType[block.type] : null;
+      if (socialIcon) {
+        const [iconFamily, iconName, color] = socialIcon;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${block.title}" title="${block.title}" class="social-icon-link" style="color:${color}"><i class="${iconFamily} ${iconName}" aria-hidden="true"></i></a>`;
+      }
+      const iCls = `fa-solid ${getSectionIcon(block.type)}`;
       const cCls = block.color || 'bg-slate-800';
       return `
-        <a href="${url}" target="_blank" class="w-full py-3.5 px-5 rounded-2xl ${cCls} text-white flex items-center justify-between shadow-lg transition transform active:scale-95 mb-2 hover:brightness-110">
+        <a href="${url}" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-5 rounded-2xl ${cCls} text-white flex items-center justify-between shadow-lg transition transform active:scale-95 mb-2 hover:brightness-110">
           <div class="flex items-center gap-4">
             <div class="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center"><i class="${iCls} text-lg"></i></div>
             <span class="font-bold text-sm tracking-wide drop-shadow-md">${block.title}</span>

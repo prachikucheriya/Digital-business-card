@@ -1778,8 +1778,17 @@
       const b = c.basicInfo;
       let html = `<div class="space-y-4 ${isPreview ? 'p-3' : 'pb-12'}">`;
 
-      // STRICTLY Iterate over the SectionOrder controlled by the Section Manager
-      c.sectionOrder.filter(sec => sec.enabled).forEach(block => {
+      // Keep the email contact icon beside social links, after them.
+      const publicSections = c.sectionOrder.filter(sec => sec.enabled);
+      const emailIndex = publicSections.findIndex(sec => sec.type === 'Email');
+      if (emailIndex >= 0) {
+        const [emailSection] = publicSections.splice(emailIndex, 1);
+        const socialTypes = ['Website', 'Instagram', 'Facebook', 'YouTube', 'LinkedIn', 'Telegram'];
+        let lastSocialIndex = -1;
+        publicSections.forEach((sec, index) => { if (socialTypes.includes(sec.type)) lastSocialIndex = index; });
+        publicSections.splice(lastSocialIndex + 1, 0, emailSection);
+      }
+      publicSections.forEach(block => {
         switch(block.type) {
           
           case 'ProfilePhoto':
@@ -1806,7 +1815,7 @@
             if(b.phone) html += renderPublicBtn(block, `tel:${b.phone}`);
             break;
           case 'Email':
-            if(b.email) html += renderPublicBtn(block, `mailto:${b.email}`);
+            if(b.email) html += renderPublicBtn(block, `mailto:${b.email}`, true);
             break;
           case 'Website':
             if(b.website) html += renderPublicBtn(block, b.website, true);
@@ -1943,7 +1952,7 @@
 
     function renderPublicBtn(block, url, isBrand = false) {
       const iconByType = {
-        Website: ['fa-solid', 'fa-globe', '#111827'], Instagram: ['fa-brands', 'fa-instagram', '#e1306c'],
+        Website: ['fa-solid', 'fa-globe', '#111827'], Email: ['fa-solid', 'fa-envelope', '#ea4335'], Instagram: ['fa-brands', 'fa-instagram', '#e1306c'],
         Facebook: ['fa-brands', 'fa-facebook-f', '#1877f2'], YouTube: ['fa-brands', 'fa-youtube', '#ff0000'],
         LinkedIn: ['fa-brands', 'fa-linkedin-in', '#0a66c2'], Telegram: ['fa-brands', 'fa-telegram', '#229ed9']
       };

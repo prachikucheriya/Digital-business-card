@@ -107,9 +107,10 @@
     }
 
     /* Compact, colorful links on public business profiles */
-    .social-icon-link { display:inline-flex !important; width:56px; height:56px; align-items:center; justify-content:center; margin:0 .65rem .5rem 0 !important; padding:0 !important; border:2px solid rgba(15,23,42,.9); border-radius:16px; background:#fff; color:#111827; box-shadow:5px 5px 0 #111827; vertical-align:middle; }
-    .social-icon-link i { font-size:1.45rem; }
-    .social-icon-link:hover { transform:translateY(-2px); }
+    .profile-icon-link { display:inline-flex !important; width:56px; height:56px; align-items:center; justify-content:center; margin:.45rem !important; padding:0 !important; border:2px solid rgba(15,23,42,.9); border-radius:16px; background:#fff; color:#111827; box-shadow:5px 5px 0 #111827; vertical-align:middle; }
+    .profile-icon-link i { font-size:1.45rem; }
+    .profile-icon-link:hover { transform:translateY(-2px); }
+    .profile-content > .card-bg { text-align:left; }
 
     /* Public Profile Themes */
     .theme-modern { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #f8fafc; }
@@ -1776,7 +1777,7 @@
     function generatePublicProfileHTML(clientId, isPreview = false) {
       const c = AppState.clients.find(x => x.id === clientId);
       const b = c.basicInfo;
-      let html = `<div class="space-y-4 ${isPreview ? 'p-3' : 'pb-12'}">`;
+      let html = `<div class="profile-content space-y-4 text-center ${isPreview ? 'p-3' : 'pb-12'}">`;
 
       // Keep the email contact icon beside social links, after them.
       const publicSections = c.sectionOrder.filter(sec => sec.enabled);
@@ -1812,7 +1813,7 @@
             if(b.whatsapp) html += renderPublicBtn(block, `https://wa.me/${b.whatsapp}`, true);
             break;
           case 'Call':
-            if(b.phone) html += renderPublicBtn(block, `tel:${b.phone}`);
+            if(b.phone) html += renderPublicBtn(block, `tel:${b.phone}`, true);
             break;
           case 'Email':
             if(b.email) html += renderPublicBtn(block, `mailto:${b.email}`, true);
@@ -1952,14 +1953,14 @@
 
     function renderPublicBtn(block, url, isBrand = false) {
       const iconByType = {
-        Website: ['fa-solid', 'fa-globe', '#111827'], Email: ['fa-solid', 'fa-envelope', '#ea4335'], Instagram: ['fa-brands', 'fa-instagram', '#e1306c'],
+        Website: ['fa-solid', 'fa-globe', '#111827'], Call: ['fa-solid', 'fa-phone', '#16a34a'], Email: ['fa-solid', 'fa-envelope', '#ea4335'], Instagram: ['fa-brands', 'fa-instagram', '#e1306c'],
         Facebook: ['fa-brands', 'fa-facebook-f', '#1877f2'], YouTube: ['fa-brands', 'fa-youtube', '#ff0000'],
         LinkedIn: ['fa-brands', 'fa-linkedin-in', '#0a66c2'], Telegram: ['fa-brands', 'fa-telegram', '#229ed9']
       };
       const socialIcon = isBrand ? iconByType[block.type] : null;
       if (socialIcon) {
         const [iconFamily, iconName, color] = socialIcon;
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${block.title}" title="${block.title}" class="social-icon-link" style="color:${color}"><i class="${iconFamily} ${iconName}" aria-hidden="true"></i></a>`;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${block.title}" title="${block.title}" class="profile-icon-link" style="color:${color}"><i class="${iconFamily} ${iconName}" aria-hidden="true"></i></a>`;
       }
       const iCls = `fa-solid ${getSectionIcon(block.type)}`;
       const cCls = block.color || 'bg-slate-800';

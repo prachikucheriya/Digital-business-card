@@ -1111,7 +1111,28 @@
 
     function updateClientField(clientId, field, value) {
       const c = AppState.clients.find(x => x.id === clientId);
+      if (!c) return;
+      if (field === 'status') {
+        c.status = value;
+        saveClientStatus(c);
+        return;
+      }
       c.basicInfo[field] = value;
+    }
+
+    async function saveClientStatus(client) {
+      if (client.basicInfo.businessName && client.slug.includes('new-profile')) {
+        client.slug = generateSlug(client.basicInfo.businessName);
+      }
+      try {
+        await saveClientToFirestore(client);
+        showToast('Profile visibility updated.');
+      } catch (error) {
+        console.error('Could not save profile visibility:', error);
+        showToast(`Could not update visibility: ${error.message}`, 'error');
+      } finally {
+        renderApp();
+      }
     }
     
     function updateClientSocial(clientId, field, value) {

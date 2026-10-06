@@ -1222,6 +1222,7 @@
       const gLimit = gCount >= 30;
       const vCount = c.videos.length;
       const vLimit = vCount >= 10;
+      const gallerySection = c.sectionOrder.find(section => section.type === 'Gallery');
 
       return `
         <div class="max-w-6xl mx-auto space-y-8">
@@ -1244,6 +1245,12 @@
             </div>
 
             ${gLimit ? `<div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300"><i class="fa-solid fa-circle-exclamation mr-1"></i> Gallery limit reached — 30/30. Delete images to add more.</div>` : ''}
+
+            <div class="max-w-md">
+              <label class="block text-[11px] font-bold text-slate-300 mb-1">Gallery Heading on Public Profile</label>
+              <input type="text" value="${gallerySection?.title || ''}" placeholder="e.g. Our Collection, Bridal Work, Food Menu" onchange="updateClientSectionTitle('${c.id}', '${gallerySection?.id || ''}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+              <p class="text-[10px] text-slate-500 mt-1">This replaces the fixed “Photo Gallery” title for this client.</p>
+            </div>
 
             <!-- Layout Selectors -->
             <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
@@ -2008,7 +2015,7 @@
               const brandVideos = vv.filter(v => v.videoKind === 'brand');
               const productVideos = vv.filter(v => v.videoKind !== 'brand');
               const vHtml = `${brandVideos.map(v => `<div class="mb-4">${renderVideoCard(v)}</div>`).join('')}${productVideos.length ? `<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-rose-300">Product videos</p><div class="grid grid-cols-2 gap-3">${productVideos.map(v => renderVideoCard(v, true)).join('')}</div>` : ''}`;
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3>${brandVideos.length ? `<p class="text-[10px] font-bold uppercase tracking-widest text-rose-300">Brand video</p>` : ''}<div>${vHtml}</div></div>`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3><div>${vHtml}</div></div>`;
             }
             break;
 

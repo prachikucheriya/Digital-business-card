@@ -1865,11 +1865,6 @@
 
       return `
         <div class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
-          <!-- Floating Admin Back Button (For Demo Purposes) -->
-          <button onclick="navigateTo('dashboard', 'clients')" class="fixed top-4 left-4 z-50 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 text-white font-bold text-xs shadow-xl hover:bg-black/80 transition flex items-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Admin Dash
-          </button>
-
           <div class="max-w-md w-full">
             ${generatePublicProfileHTML(targetClient.id, false)}
           </div>

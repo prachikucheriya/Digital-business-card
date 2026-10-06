@@ -115,14 +115,20 @@
     .profile-icon-link:hover { transform:translateY(-2px); }
     .profile-content > .card-bg { text-align:left; }
 
-    /* Public Profile Themes */
-    .theme-modern { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #f8fafc; }
-    .theme-minimal { background: #ffffff; color: #0f172a; }
-    .theme-minimal .card-bg { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; }
-    .theme-dark { background: #090d16; color: #e2e8f0; }
-    .theme-glass { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #ffffff; }
-    .theme-creative { background: linear-gradient(135deg, #4c1d95 0%, #831843 100%); color: #ffffff; }
-    .theme-emerald { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); color: #f0fdf4; }
+    /* Public Profile Themes — six client-selectable visual backgrounds */
+    .theme-ivory { --profile-card:#fffdf8; --profile-ink:#3b3025; --profile-border:#65513b; background:#fff6df; color:#3b3025; }
+    .theme-blush { --profile-card:#fffafb; --profile-ink:#4b2631; --profile-border:#8c5262; background:linear-gradient(145deg,#fff0f4,#f9d9e2); color:#4b2631; }
+    .theme-sky { --profile-card:#fbfdff; --profile-ink:#193449; --profile-border:#4c7490; background:linear-gradient(145deg,#e7f5ff,#cfe9f5); color:#193449; }
+    .theme-sage { --profile-card:#fbfdf9; --profile-ink:#294334; --profile-border:#557161; background:linear-gradient(145deg,#edf4e7,#d8ead5); color:#294334; }
+    .theme-lavender { --profile-card:#fffaff; --profile-ink:#392b4e; --profile-border:#735984; background:linear-gradient(145deg,#f3ecff,#e5daf5); color:#392b4e; }
+    .theme-midnight, .theme-modern { --profile-card:rgba(15,23,42,.78); --profile-ink:#f8fafc; --profile-border:rgba(255,255,255,.22); background:linear-gradient(135deg,#0f172a,#1e1b4b,#0f172a); color:#f8fafc; }
+    .theme-minimal { --profile-card:#ffffff; --profile-ink:#0f172a; --profile-border:#cbd5e1; background:#f8fafc; color:#0f172a; }
+    .theme-dark { --profile-card:#151b29; --profile-ink:#e2e8f0; --profile-border:#475569; background:#090d16; color:#e2e8f0; }
+    .theme-glass { --profile-card:rgba(30,41,59,.78); --profile-ink:#fff; --profile-border:rgba(255,255,255,.18); background:linear-gradient(135deg,#1e293b,#334155); color:#fff; }
+    .theme-creative { --profile-card:rgba(76,29,149,.42); --profile-ink:#fff; --profile-border:rgba(255,255,255,.25); background:linear-gradient(135deg,#4c1d95,#831843); color:#fff; }
+    .theme-emerald { --profile-card:rgba(6,78,59,.62); --profile-ink:#f0fdf4; --profile-border:rgba(255,255,255,.2); background:linear-gradient(135deg,#064e3b,#022c22); color:#f0fdf4; }
+    .profile-content .card-bg { background:var(--profile-card,rgba(15,23,42,.7)); border-color:var(--profile-border,rgba(255,255,255,.15)); color:var(--profile-ink,#fff); box-shadow:0 10px 25px rgba(15,23,42,.12); }
+    .theme-ivory .card-bg .text-white, .theme-blush .card-bg .text-white, .theme-sky .card-bg .text-white, .theme-sage .card-bg .text-white, .theme-lavender .card-bg .text-white, .theme-minimal .card-bg .text-white { color:var(--profile-ink)!important; }
 
     /* Layout Helpers */
     .masonry-grid { column-count: 2; column-gap: 0.75rem; }
@@ -1094,6 +1100,27 @@
             </div>
           </div>
 
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-palette text-violet-400"></i> Profile Background Theme</h3>
+              <p class="text-xs text-slate-400 mt-1">Choose a look that suits this client's brand. The public profile preview updates instantly.</p>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              ${[
+                ['ivory', 'Ivory', 'bg-[#fff1d4] text-[#4c3825]'],
+                ['blush', 'Blush', 'bg-[#f7d8e1] text-[#572936]'],
+                ['sky', 'Sky', 'bg-[#cfeafa] text-[#1f4961]'],
+                ['sage', 'Sage', 'bg-[#d9ead5] text-[#294334]'],
+                ['lavender', 'Lavender', 'bg-[#e6d9f5] text-[#3d2b56]'],
+                ['midnight', 'Midnight', 'bg-[#18233e] text-white']
+              ].map(([value, label, swatch]) => `
+                <button type="button" onclick="setClientTheme('${c.id}', '${value}')" class="${swatch} rounded-2xl p-3 text-left border-2 transition ${b.theme === value ? 'border-white ring-2 ring-blue-500 scale-[1.02]' : 'border-transparent hover:scale-[1.02]'}">
+                  <span class="block h-8 rounded-lg bg-white/30 mb-2 border border-black/10"></span><span class="text-xs font-extrabold">${label}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
           <!-- Social Media Integration -->
           <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
             <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-400"></i> Social Media Links</h3>
@@ -1155,6 +1182,13 @@
         return;
       }
       c.basicInfo[field] = value;
+    }
+
+    function setClientTheme(clientId, theme) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      if (!c) return;
+      c.basicInfo.theme = theme;
+      renderApp();
     }
 
     async function saveClientStatus(client) {

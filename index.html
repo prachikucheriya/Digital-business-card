@@ -195,7 +195,7 @@
 
     async function loadClientsFromFirestore() {
       const snapshot = await clientsCollection.get();
-      AppState.clients = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.data().id || doc.id, _firestoreSlug: doc.id }));
+      AppState.clients = snapshot.docs.map(doc => normalizeClientSections({ ...doc.data(), id: doc.data().id || doc.id, _firestoreSlug: doc.id }));
     }
 
     function makeFirestoreSafe(value) {
@@ -262,17 +262,20 @@
       { id: 'sec_name', type: 'FullName', title: 'Full Name', enabled: true },
       { id: 'sec_biz', type: 'BusinessName', title: 'Business Name', enabled: true },
       { id: 'sec_bio', type: 'Bio', title: 'Bio / About', enabled: true },
+      { id: 'sec_banner', type: 'GalleryBanner', title: 'Featured Banner', enabled: true },
       { id: 'sec_wa', type: 'WhatsApp', title: 'WhatsApp Button', enabled: true, color: 'bg-green-500' },
       { id: 'sec_call', type: 'Call', title: 'Call Button', enabled: true, color: 'bg-emerald-600' },
       { id: 'sec_email', type: 'Email', title: 'Email Button', enabled: true, color: 'bg-blue-600' },
       { id: 'sec_web', type: 'Website', title: 'Website Button', enabled: true, color: 'bg-indigo-600' },
       { id: 'sec_ig', type: 'Instagram', title: 'Instagram', enabled: true, color: 'bg-pink-600' },
+      { id: 'sec_ig_engage', type: 'InstagramEngagement', title: 'Follow & Like', enabled: true, color: 'bg-pink-600' },
       { id: 'sec_fb', type: 'Facebook', title: 'Facebook', enabled: true, color: 'bg-blue-500' },
       { id: 'sec_yt', type: 'YouTube', title: 'YouTube', enabled: true, color: 'bg-rose-600' },
       { id: 'sec_li', type: 'LinkedIn', title: 'LinkedIn', enabled: false, color: 'bg-blue-700' },
       { id: 'sec_tg', type: 'Telegram', title: 'Telegram', enabled: false, color: 'bg-sky-500' },
       { id: 'sec_links', type: 'CustomLinks', title: 'Custom Links Hub', enabled: true },
       { id: 'sec_vcard', type: 'vCard', title: 'Download Contact', enabled: true },
+      { id: 'sec_rate', type: 'GoogleRating', title: 'Rate Us on Google', enabled: true },
       { id: 'sec_gal', type: 'Gallery', title: 'Photo Gallery', enabled: true },
       { id: 'sec_vid', type: 'Videos', title: 'Video Showcase', enabled: true },
       { id: 'sec_serv', type: 'Services', title: 'Services Catalog', enabled: true },
@@ -280,6 +283,22 @@
       { id: 'sec_form', type: 'ContactForm', title: 'Lead Enquiry Form', enabled: true },
       { id: 'sec_map', type: 'Map', title: 'Google Maps & Hours', enabled: true }
     ];
+
+    function normalizeClientSections(client) {
+      client.sectionOrder = Array.isArray(client.sectionOrder) ? client.sectionOrder : JSON.parse(JSON.stringify(DEFAULT_SECTION_ORDER));
+      const addBlock = (type, beforeType) => {
+        if (client.sectionOrder.some(section => section.type === type)) return;
+        const template = DEFAULT_SECTION_ORDER.find(section => section.type === type);
+        if (!template) return;
+        const block = JSON.parse(JSON.stringify(template));
+        const index = client.sectionOrder.findIndex(section => section.type === beforeType);
+        client.sectionOrder.splice(index < 0 ? client.sectionOrder.length : index, 0, block);
+      };
+      addBlock('GalleryBanner', 'WhatsApp');
+      addBlock('InstagramEngagement', 'Facebook');
+      addBlock('GoogleRating', 'Gallery');
+      return client;
+    }
 
     // Core Agency Application State (In-Memory Database)
     const AppState = {
@@ -1068,6 +1087,11 @@
               <label class="block text-xs font-semibold text-slate-300 mb-1">Google Maps Link</label>
               <input type="text" value="${b.googleMapsUrl}" oninput="updateClientField('${c.id}', 'googleMapsUrl', this.value)" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
             </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Google Review Link</label>
+              <input type="url" value="${b.googleReviewUrl || ''}" oninput="updateClientField('${c.id}', 'googleReviewUrl', this.value)" placeholder="Paste the Google review link customers should open" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
+            </div>
           </div>
 
           <!-- Social Media Integration -->
@@ -1089,6 +1113,10 @@
                   <input type="url" value="${c.socials[s.id] || ''}" onchange="updateClientSocial('${c.id}', '${s.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="https://${s.id.toLowerCase()}.com/username"/>
                 </div>
               `).join('')}
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-2"><i class="fa-brands fa-instagram text-pink-500 text-sm w-4 text-center"></i> Instagram Post / Reel for Likes</label>
+              <input type="url" value="${c.socials.instagramPost || ''}" onchange="updateClientSocial('${c.id}', 'instagramPost', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="https://instagram.com/p/... (optional)"/>
             </div>
           </div>
 
@@ -1486,7 +1514,7 @@
                     </div>
                     
                     <div>
-                      <span class="text-sm font-bold text-white block">${sec.title}</span>
+                      <input aria-label="${sec.type} heading" value="${sec.title}" onchange="updateClientSectionTitle('${c.id}', '${sec.id}', this.value)" class="w-full max-w-[220px] bg-transparent text-sm font-bold text-white border-b border-transparent focus:border-blue-500 focus:outline-none"/>
                       <span class="text-[9px] text-slate-500 uppercase tracking-wider block">${sec.type} Block</span>
                     </div>
                   </div>
@@ -1520,7 +1548,7 @@
     }
 
     function getSectionIcon(type) {
-      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
+      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'InstagramEngagement':'fa-heart', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'GalleryBanner':'fa-panorama', 'GoogleRating':'fa-star', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
       return map[type] || 'fa-cube';
     }
 
@@ -1540,6 +1568,15 @@
       const sec = c.sectionOrder.find(s => s.id === secId);
       if (sec) {
         sec.enabled = !sec.enabled;
+        renderApp();
+      }
+    }
+
+    function updateClientSectionTitle(clientId, secId, value) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      const sec = c.sectionOrder.find(s => s.id === secId);
+      if (sec) {
+        sec.title = value.trim() || sec.title;
         renderApp();
       }
     }
@@ -1787,21 +1824,30 @@
       `;
     }
 
+    function getGalleryShowcaseGroups(client) {
+      const all = (client.gallery || []).filter(g => g.enabled !== false);
+      const galleryStyle = client.galleryConfig?.style || 'grid';
+      const isMuzeGallery = /muze/i.test(`${client.slug || ''} ${client.basicInfo?.businessName || ''}`);
+      const useShowcase = galleryStyle === 'showcase' || isMuzeGallery;
+      const markedBanners = all.filter(g => g.display === 'banner');
+      return {
+        all,
+        useShowcase,
+        categoryPhotos: useShowcase ? (markedBanners.length ? all.filter(g => g.display !== 'banner') : (isMuzeGallery ? all.slice(0, 6) : all)) : all,
+        banners: useShowcase ? (markedBanners.length ? markedBanners : (isMuzeGallery ? all.slice(6) : [])) : []
+      };
+    }
+
     // Extracted HTML generation for reusability in Live Preview and Public Page
     function generatePublicProfileHTML(clientId, isPreview = false) {
       const c = AppState.clients.find(x => x.id === clientId);
       const b = c.basicInfo;
       let html = `<div class="profile-content space-y-4 text-center ${isPreview ? 'p-3' : 'pb-12'}">`;
-
-      // Keep the email contact icon beside social links, after them.
+      const galleryGroups = getGalleryShowcaseGroups(c);
       const publicSections = c.sectionOrder.filter(sec => sec.enabled);
-      const emailIndex = publicSections.findIndex(sec => sec.type === 'Email');
-      if (emailIndex >= 0) {
-        const [emailSection] = publicSections.splice(emailIndex, 1);
-        const socialTypes = ['Website', 'Instagram', 'Facebook', 'YouTube', 'LinkedIn', 'Telegram'];
-        let lastSocialIndex = -1;
-        publicSections.forEach((sec, index) => { if (socialTypes.includes(sec.type)) lastSocialIndex = index; });
-        publicSections.splice(lastSocialIndex + 1, 0, emailSection);
+      if (galleryGroups.banners.length && !publicSections.some(sec => sec.type === 'GalleryBanner')) {
+        const whatsappIndex = publicSections.findIndex(sec => sec.type === 'WhatsApp');
+        publicSections.splice(whatsappIndex < 0 ? 0 : whatsappIndex, 0, { id: 'auto-banner', type: 'GalleryBanner', title: 'Featured Banner', enabled: true });
       }
       publicSections.forEach(block => {
         switch(block.type) {
@@ -1838,6 +1884,12 @@
           case 'Instagram':
             if(c.socials.instagram) html += renderPublicBtn(block, c.socials.instagram, true);
             break;
+          case 'InstagramEngagement':
+            if (c.socials.instagram) {
+              const likeUrl = c.socials.instagramPost || c.socials.instagram;
+              html += `<div class="card-bg p-4 rounded-2xl border border-white/10 shadow-xl"><p class="text-xs font-bold text-white">Follow our journey</p><div class="grid grid-cols-2 gap-2 mt-3"><a href="${c.socials.instagram}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-rose-500 text-xs font-bold text-white"><i class="fa-brands fa-instagram mr-1"></i> Follow</a><a href="${likeUrl}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white"><i class="fa-solid fa-heart mr-1 text-rose-400"></i> Like</a></div></div>`;
+            }
+            break;
           case 'Facebook':
             if(c.socials.facebook) html += renderPublicBtn(block, c.socials.facebook, true);
             break;
@@ -1855,10 +1907,9 @@
 
           // Gallery Engine with Layout Support
           case 'Gallery':
-            const gv = c.gallery.filter(g => g.enabled !== false);
+            const gv = galleryGroups.all;
             if (gv.length > 0) {
               const galleryStyle = c.galleryConfig?.style || 'grid';
-              const isMuzeGallery = /muze/i.test(`${c.slug || ''} ${b.businessName || ''}`);
               let layoutCls = 'grid grid-cols-2 gap-2'; // Default grid
               let gHtml = gv.map(g => `<img src="${g.url}" class="w-full aspect-square object-cover rounded-xl shadow-sm border border-white/10"/>`).join('');
               
@@ -1874,18 +1925,27 @@
                 layoutCls = 'masonry-grid'; 
                 gHtml = gv.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join(''); 
               }
-              else if (galleryStyle === 'showcase' || isMuzeGallery) {
-                const markedBanners = gv.filter(g => g.display === 'banner');
-                const categoryPhotos = markedBanners.length ? gv.filter(g => g.display !== 'banner') : (isMuzeGallery ? gv.slice(0, 6) : gv);
-                const banners = markedBanners.length ? markedBanners : (isMuzeGallery ? gv.slice(6) : []);
+              else if (galleryGroups.useShowcase) {
+                const categoryPhotos = galleryGroups.categoryPhotos;
                 layoutCls = 'space-y-4';
                 gHtml = `
                   ${categoryPhotos.length ? `<div class="grid grid-cols-3 gap-2">${categoryPhotos.map(g => `<div class="relative aspect-square overflow-hidden border-2 border-white/20 bg-black/30"><img src="${g.url}" alt="${g.category || g.title || 'Gallery photo'}" class="w-full h-full object-cover"/><div class="absolute inset-x-0 bottom-0 bg-black/65 px-1.5 py-1 text-center"><p class="truncate text-[9px] font-bold italic text-white">${g.category || g.title || 'Gallery'}</p></div></div>`).join('')}</div>` : ''}
-                  ${banners.map(g => `<div class="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-md"><img src="${g.url}" alt="${g.title || 'Gallery banner'}" class="w-full aspect-[16/9] object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-3"><p class="font-bold text-sm text-white">${g.title || ''}</p>${g.caption ? `<p class="mt-1 text-xs opacity-70">${g.caption}</p>` : ''}</div>` : ''}</div>`).join('')}
                 `;
               }
 
               html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${block.title}</h3><div class="${layoutCls}">${gHtml}</div></div>`;
+            }
+            break;
+
+          case 'GalleryBanner':
+            if (galleryGroups.banners.length) {
+              html += `<div class="space-y-3">${galleryGroups.banners.map(g => `<div class="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-md"><img src="${g.url}" alt="${g.title || 'Featured banner'}" class="w-full aspect-[16/9] object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-3 text-left"><p class="font-bold text-sm text-white">${g.title || ''}</p>${g.caption ? `<p class="mt-1 text-xs opacity-70">${g.caption}</p>` : ''}</div>` : ''}</div>`).join('')}</div>`;
+            }
+            break;
+
+          case 'GoogleRating':
+            if (b.googleReviewUrl) {
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl text-center"><p class="font-bold text-base text-white">Loved your visit? Rate us</p><p class="mt-1 text-xs opacity-70">Your rating helps others find us</p><a href="${b.googleReviewUrl}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex gap-1 text-amber-400 text-2xl" aria-label="Rate us on Google">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</a><p class="mt-3 text-[10px] font-bold uppercase tracking-wider text-blue-300">Rate us on Google</p></div>`;
             }
             break;
 
@@ -2026,7 +2086,7 @@
         document.getElementById('view-viewport').innerHTML = `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading profile…</div>`;
         try {
           const snapshot = await clientsCollection.doc(slug).get();
-          if (snapshot.exists) AppState.clients = [{ ...snapshot.data(), id: snapshot.data().id || snapshot.id, _firestoreSlug: snapshot.id }];
+          if (snapshot.exists) AppState.clients = [normalizeClientSections({ ...snapshot.data(), id: snapshot.data().id || snapshot.id, _firestoreSlug: snapshot.id })];
         } catch (error) {
           console.error('Could not load public profile:', error);
         }

@@ -113,7 +113,7 @@
     .profile-icon-link { display:inline-flex !important; width:56px; height:56px; align-items:center; justify-content:center; margin:.45rem !important; padding:0 !important; border:2px solid rgba(15,23,42,.9); border-radius:16px; background:#fff; color:#111827; box-shadow:5px 5px 0 #111827; vertical-align:middle; }
     .profile-icon-link i { font-size:1.45rem; }
     .profile-icon-link:hover { transform:translateY(-2px); }
-    .profile-content > .card-bg { text-align:left; }
+    .profile-content > .card-bg { text-align:center; }
 
     /* Public Profile Themes — six client-selectable visual backgrounds */
     .theme-ivory { --profile-card:#fffdf8; --profile-ink:#3b3025; --profile-border:#65513b; background:#fff6df; color:#3b3025; }
@@ -128,7 +128,12 @@
     .theme-creative { --profile-card:rgba(76,29,149,.42); --profile-ink:#fff; --profile-border:rgba(255,255,255,.25); background:linear-gradient(135deg,#4c1d95,#831843); color:#fff; }
     .theme-emerald { --profile-card:rgba(6,78,59,.62); --profile-ink:#f0fdf4; --profile-border:rgba(255,255,255,.2); background:linear-gradient(135deg,#064e3b,#022c22); color:#f0fdf4; }
     .profile-content .card-bg { background:var(--profile-card,rgba(15,23,42,.7)); border-color:var(--profile-border,rgba(255,255,255,.15)); color:var(--profile-ink,#fff); box-shadow:0 10px 25px rgba(15,23,42,.12); }
+    .profile-content .card-bg > h3 { justify-content:center; text-align:center; }
     .theme-ivory .card-bg .text-white, .theme-blush .card-bg .text-white, .theme-sky .card-bg .text-white, .theme-sage .card-bg .text-white, .theme-lavender .card-bg .text-white, .theme-minimal .card-bg .text-white { color:var(--profile-ink)!important; }
+    .theme-ivory .profile-content .bg-black\/20, .theme-blush .profile-content .bg-black\/20, .theme-sky .profile-content .bg-black\/20, .theme-sage .profile-content .bg-black\/20, .theme-lavender .profile-content .bg-black\/20, .theme-minimal .profile-content .bg-black\/20 { background:rgba(76,56,37,.06)!important; }
+    .theme-ivory .profile-content .bg-black\/40, .theme-blush .profile-content .bg-black\/40, .theme-sky .profile-content .bg-black\/40, .theme-sage .profile-content .bg-black\/40, .theme-lavender .profile-content .bg-black\/40, .theme-minimal .profile-content .bg-black\/40 { background:rgba(76,56,37,.1)!important; }
+    .enquiry-field { background:#fff8e8!important; color:#374151!important; border-color:#d6c6a8!important; }
+    .enquiry-field::placeholder { color:#6b7280!important; opacity:1; }
 
     /* Layout Helpers */
     .masonry-grid { column-count: 2; column-gap: 0.75rem; }
@@ -1921,7 +1926,7 @@
           case 'InstagramEngagement':
             if (c.socials.instagram) {
               const likeUrl = c.socials.instagramPost || c.socials.instagram;
-              html += `<div class="card-bg p-4 rounded-2xl border border-white/10 shadow-xl"><p class="text-xs font-bold text-white">Follow our journey</p><div class="grid grid-cols-2 gap-2 mt-3"><a href="${c.socials.instagram}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-rose-500 text-xs font-bold text-white"><i class="fa-brands fa-instagram mr-1"></i> Follow</a><a href="${likeUrl}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white"><i class="fa-solid fa-heart mr-1 text-rose-400"></i> Like</a></div></div>`;
+              html += `<div class="card-bg p-4 rounded-2xl border border-white/10 shadow-xl"><p class="text-xs font-bold text-white text-center">Follow our journey</p><div class="grid grid-cols-2 gap-2 mt-3"><a href="${c.socials.instagram}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-rose-500 text-xs font-bold text-white text-center"><i class="fa-brands fa-instagram"></i> Follow</a><a href="${likeUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white text-center"><i class="fa-solid fa-heart text-rose-400"></i> Like</a></div></div>`;
             }
             break;
           case 'Facebook':
@@ -2027,10 +2032,10 @@
               <div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">
                 <h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-paper-plane text-cyan-400"></i> Send Enquiry</h3>
                 <form class="space-y-3">
-                  <input type="text" placeholder="Your Name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
-                  <input type="text" placeholder="Mobile / WhatsApp" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"/>
-                  <textarea rows="2" placeholder="Message..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
-                  <button type="button" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-md">Submit Enquiry</button>
+                  <input type="text" placeholder="Your Name" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
+                  <input type="text" placeholder="Mobile / WhatsApp" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
+                  <textarea rows="2" placeholder="Address / Message" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"></textarea>
+                  <button type="button" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-slate-900 shadow-md">Submit Enquiry</button>
                 </form>
               </div>
             `;

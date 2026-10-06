@@ -1222,7 +1222,6 @@
       const gLimit = gCount >= 30;
       const vCount = c.videos.length;
       const vLimit = vCount >= 10;
-      const gallerySection = c.sectionOrder.find(section => section.type === 'Gallery');
 
       return `
         <div class="max-w-6xl mx-auto space-y-8">
@@ -1248,8 +1247,8 @@
 
             <div class="max-w-md">
               <label class="block text-[11px] font-bold text-slate-300 mb-1">Gallery Heading on Public Profile</label>
-              <input type="text" value="${gallerySection?.title || ''}" placeholder="e.g. Our Collection, Bridal Work, Food Menu" onchange="updateClientSectionTitle('${c.id}', '${gallerySection?.id || ''}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"/>
-              <p class="text-[10px] text-slate-500 mt-1">This replaces the fixed “Photo Gallery” title for this client.</p>
+              <input type="text" value="${c.galleryConfig?.heading || ''}" placeholder="Optional: e.g. Our Collection, Bridal Work, Food Menu" onchange="updateGalleryHeading('${c.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+              <p class="text-[10px] text-slate-500 mt-1">Leave empty to hide the heading on the public profile.</p>
             </div>
 
             <!-- Layout Selectors -->
@@ -1355,6 +1354,14 @@
       const c = AppState.clients.find(x => x.id === clientId);
       c.galleryConfig.style = style;
       renderApp();
+    }
+
+    function updateGalleryHeading(clientId, value) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      if (c) {
+        c.galleryConfig = c.galleryConfig || {};
+        c.galleryConfig.heading = value.trim();
+      }
     }
 
     function toggleClientMediaState(clientId, type, idx) {
@@ -1979,7 +1986,7 @@
                 `;
               }
 
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${block.title}</h3><div class="${layoutCls}">${gHtml}</div></div>`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">${c.galleryConfig?.heading ? `<h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${c.galleryConfig.heading}</h3>` : ''}<div class="${layoutCls}">${gHtml}</div></div>`;
             }
             break;
 
@@ -2015,7 +2022,7 @@
               const brandVideos = vv.filter(v => v.videoKind === 'brand');
               const productVideos = vv.filter(v => v.videoKind !== 'brand');
               const vHtml = `${brandVideos.map(v => `<div class="mb-4">${renderVideoCard(v)}</div>`).join('')}${productVideos.length ? `<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-rose-300">Product videos</p><div class="grid grid-cols-2 gap-3">${productVideos.map(v => renderVideoCard(v, true)).join('')}</div>` : ''}`;
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3><div>${vHtml}</div></div>`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><div>${vHtml}</div></div>`;
             }
             break;
 

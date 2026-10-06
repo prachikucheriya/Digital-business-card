@@ -1183,7 +1183,7 @@
               <div class="flex items-center gap-3">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Layout Style:</span>
                 <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
-                  ${['grid', 'simple', 'large', 'masonry'].map(st => `
+                  ${['grid', 'simple', 'large', 'masonry', 'showcase'].map(st => `
                     <button onclick="setClientGalleryStyle('${c.id}', '${st}')" class="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition ${c.galleryConfig.style === st ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">${st}</button>
                   `).join('')}
                 </div>
@@ -1210,6 +1210,7 @@
                     <div class="space-y-1 mb-2">
                       <input type="text" value="${img.title || ''}" placeholder="Title (Optional)" onchange="updateClientMediaField('${c.id}','gallery',${idx},'title',this.value)" class="w-full bg-transparent text-[11px] font-bold text-white border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-0.5"/>
                       <input type="text" value="${img.caption || ''}" placeholder="Caption (Optional)" onchange="updateClientMediaField('${c.id}','gallery',${idx},'caption',this.value)" class="w-full bg-transparent text-[9px] text-slate-400 border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-0.5"/>
+                      ${c.galleryConfig.style === 'showcase' ? `<div class="grid grid-cols-2 gap-1 pt-1"><input type="text" value="${img.category || ''}" placeholder="Category label" onchange="updateClientMediaField('${c.id}','gallery',${idx},'category',this.value)" class="min-w-0 bg-transparent text-[9px] text-emerald-300 border-b border-slate-700 focus:outline-none focus:border-emerald-500 pb-0.5"/><select onchange="updateClientMediaField('${c.id}','gallery',${idx},'display',this.value)" class="min-w-0 bg-slate-800 text-[9px] text-slate-200 rounded px-1"><option value="photo" ${img.display === 'banner' ? '' : 'selected'}>Category photo</option><option value="banner" ${img.display === 'banner' ? 'selected' : ''}>Banner</option></select></div>` : ''}
                     </div>
                     <div class="flex justify-between items-center mt-auto pt-2 border-t border-slate-800/50">
                       <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Order</span>
@@ -1253,6 +1254,7 @@
                   <div class="p-4 space-y-2">
                     <input type="text" value="${v.title}" placeholder="Video Title" onchange="updateClientMediaField('${c.id}','videos',${idx},'title',this.value)" class="w-full bg-transparent text-xs font-bold text-white border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-1"/>
                     <input type="text" value="${v.description || ''}" placeholder="Description" onchange="updateClientMediaField('${c.id}','videos',${idx},'description',this.value)" class="w-full bg-transparent text-[10px] text-slate-400 border-b border-slate-700 focus:outline-none focus:border-blue-500 pb-1"/>
+                    <select onchange="updateClientMediaField('${c.id}','videos',${idx},'videoKind',this.value)" class="w-full bg-slate-800 text-[10px] text-slate-200 rounded-lg px-2 py-1.5 border border-slate-700 focus:outline-none focus:border-rose-500"><option value="brand" ${v.videoKind === 'brand' ? 'selected' : ''}>Brand video (single feature)</option><option value="product" ${v.videoKind === 'brand' ? '' : 'selected'}>Product video (grid)</option></select>
                     
                     <div class="flex items-center justify-between pt-3 border-t border-slate-800 mt-2">
                       <div class="flex gap-1">
@@ -1393,6 +1395,14 @@
               <label class="block text-[11px] font-semibold text-slate-300 mb-1">Video Title <span class="text-rose-400">*</span></label>
               <input id="modal-vid-title" type="text" required placeholder="e.g. Brand Presentation" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-blue-500"/>
             </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Video display</label>
+              <select id="modal-vid-kind" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:border-rose-500">
+                <option value="product">Product video — show in grid</option>
+                <option value="brand">Brand video — show as single feature</option>
+              </select>
+            </div>
             
             <div class="pt-3 border-t border-slate-700 flex justify-end gap-2">
               <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-slate-200 text-xs font-bold">Cancel</button>
@@ -1407,6 +1417,7 @@
       const c = AppState.clients.find(x => x.id === clientId);
       const isUpload = !document.getElementById('sec-vupload').classList.contains('hidden');
       const title = document.getElementById('modal-vid-title').value;
+      const videoKind = document.getElementById('modal-vid-kind').value;
       
       let url = '';
       let embedUrl = '';
@@ -1442,7 +1453,7 @@
         }
       }
 
-      c.videos.push({ id: 'vid_' + Date.now(), type: isUpload ? 'upload' : 'url', url, title, embedUrl, enabled: true });
+      c.videos.push({ id: 'vid_' + Date.now(), type: isUpload ? 'upload' : 'url', url, title, embedUrl, videoKind, enabled: true });
       closeModal();
       renderApp();
       showToast('Video added to profile!');
@@ -1861,6 +1872,15 @@
                 layoutCls = 'masonry-grid'; 
                 gHtml = gv.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join(''); 
               }
+              else if (c.galleryConfig.style === 'showcase') {
+                const categoryPhotos = gv.filter(g => g.display !== 'banner');
+                const banners = gv.filter(g => g.display === 'banner');
+                layoutCls = 'space-y-4';
+                gHtml = `
+                  ${categoryPhotos.length ? `<div class="grid grid-cols-3 gap-2">${categoryPhotos.map(g => `<div class="relative aspect-square overflow-hidden border-2 border-white/20 bg-black/30"><img src="${g.url}" alt="${g.category || g.title || 'Gallery photo'}" class="w-full h-full object-cover"/><div class="absolute inset-x-0 bottom-0 bg-black/65 px-1.5 py-1 text-center"><p class="truncate text-[9px] font-bold italic text-white">${g.category || g.title || 'Gallery'}</p></div></div>`).join('')}</div>` : ''}
+                  ${banners.map(g => `<div class="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-md"><img src="${g.url}" alt="${g.title || 'Gallery banner'}" class="w-full aspect-[16/9] object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-3"><p class="font-bold text-sm text-white">${g.title || ''}</p>${g.caption ? `<p class="mt-1 text-xs opacity-70">${g.caption}</p>` : ''}</div>` : ''}</div>`).join('')}
+                `;
+              }
 
               html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${block.title}</h3><div class="${layoutCls}">${gHtml}</div></div>`;
             }
@@ -1870,20 +1890,23 @@
           case 'Videos':
             const vv = c.videos.filter(v => v.enabled !== false);
             if (vv.length > 0) {
-              const vHtml = vv.map(v => {
+              const renderVideoCard = (v, compact = false) => {
                 const youtubeId = (v.embedUrl || '').match(/youtube\.com\/embed\/([^?&]+)/)?.[1];
                 const poster = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : '';
                 const videoStage = v.embedUrl
                   ? `<div data-profile-video data-video-src="${encodeURIComponent(v.embedUrl)}" class="relative aspect-video bg-black"><img src="${poster}" alt="${v.title || 'Video preview'}" class="w-full h-full object-cover" onerror="this.style.display='none'"><button type="button" onclick="playProfileVideo(this)" aria-label="Play ${v.title || 'video'}" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/25 hover:bg-black/40 transition"><span class="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl"><i class="fa-solid fa-play ml-1 text-xl"></i></span></button></div>`
                   : `<div data-profile-video class="relative aspect-video bg-black"><video src="${v.url}" preload="metadata" playsinline class="w-full h-full object-contain"></video><button type="button" onclick="playProfileVideo(this)" aria-label="Play ${v.title || 'video'}" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/25 hover:bg-black/40 transition"><span class="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl"><i class="fa-solid fa-play ml-1 text-xl"></i></span></button></div>`;
                 return `
-                  <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 bg-black/40 shadow-md">
+                  <div class="rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-md">
                     ${videoStage}
-                    <div class="p-4"><h4 class="font-bold text-sm text-white">${v.title}</h4>${v.description ? `<p class="text-xs opacity-70 mt-1">${v.description}</p>` : ''}</div>
+                    <div class="${compact ? 'p-3' : 'p-4'}"><h4 class="font-bold text-sm text-white">${v.title}</h4>${v.description ? `<p class="text-xs opacity-70 mt-1">${v.description}</p>` : ''}</div>
                   </div>
                 `;
-              }).join('');
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3><div>${vHtml}</div></div>`;
+              };
+              const brandVideos = vv.filter(v => v.videoKind === 'brand');
+              const productVideos = vv.filter(v => v.videoKind !== 'brand');
+              const vHtml = `${brandVideos.map(v => `<div class="mb-4">${renderVideoCard(v)}</div>`).join('')}${productVideos.length ? `<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-rose-300">Product videos</p><div class="grid grid-cols-2 gap-3">${productVideos.map(v => renderVideoCard(v, true)).join('')}</div>` : ''}`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-circle-play text-rose-400"></i> ${block.title}</h3>${brandVideos.length ? `<p class="text-[10px] font-bold uppercase tracking-widest text-rose-300">Brand video</p>` : ''}<div>${vHtml}</div></div>`;
             }
             break;
 

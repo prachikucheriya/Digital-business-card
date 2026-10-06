@@ -1857,24 +1857,27 @@
           case 'Gallery':
             const gv = c.gallery.filter(g => g.enabled !== false);
             if (gv.length > 0) {
+              const galleryStyle = c.galleryConfig?.style || 'grid';
+              const isMuzeGallery = /muze/i.test(`${c.slug || ''} ${b.businessName || ''}`);
               let layoutCls = 'grid grid-cols-2 gap-2'; // Default grid
               let gHtml = gv.map(g => `<img src="${g.url}" class="w-full aspect-square object-cover rounded-xl shadow-sm border border-white/10"/>`).join('');
               
-              if (c.galleryConfig.style === 'simple') { 
+              if (galleryStyle === 'simple') {
                 layoutCls = 'flex flex-col gap-3'; 
                 gHtml = gv.map(g => `<img src="${g.url}" class="w-full h-auto object-cover rounded-2xl shadow-md border border-white/10"/>`).join(''); 
               }
-              else if (c.galleryConfig.style === 'large') { 
+              else if (galleryStyle === 'large') {
                 layoutCls = 'flex flex-col gap-4'; 
                 gHtml = gv.map(g => `<div class="rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-md"><img src="${g.url}" class="w-full h-auto object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-4"><p class="font-bold text-sm text-white">${g.title}</p>${g.caption ? `<p class="text-xs opacity-70 mt-1">${g.caption}</p>` : ''}</div>` : ''}</div>`).join(''); 
               }
-              else if (c.galleryConfig.style === 'masonry') { 
+              else if (galleryStyle === 'masonry') {
                 layoutCls = 'masonry-grid'; 
                 gHtml = gv.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join(''); 
               }
-              else if (c.galleryConfig.style === 'showcase') {
-                const categoryPhotos = gv.filter(g => g.display !== 'banner');
-                const banners = gv.filter(g => g.display === 'banner');
+              else if (galleryStyle === 'showcase' || isMuzeGallery) {
+                const markedBanners = gv.filter(g => g.display === 'banner');
+                const categoryPhotos = markedBanners.length ? gv.filter(g => g.display !== 'banner') : (isMuzeGallery ? gv.slice(0, 6) : gv);
+                const banners = markedBanners.length ? markedBanners : (isMuzeGallery ? gv.slice(6) : []);
                 layoutCls = 'space-y-4';
                 gHtml = `
                   ${categoryPhotos.length ? `<div class="grid grid-cols-3 gap-2">${categoryPhotos.map(g => `<div class="relative aspect-square overflow-hidden border-2 border-white/20 bg-black/30"><img src="${g.url}" alt="${g.category || g.title || 'Gallery photo'}" class="w-full h-full object-cover"/><div class="absolute inset-x-0 bottom-0 bg-black/65 px-1.5 py-1 text-center"><p class="truncate text-[9px] font-bold italic text-white">${g.category || g.title || 'Gallery'}</p></div></div>`).join('')}</div>` : ''}

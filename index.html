@@ -236,6 +236,10 @@
       for (const [index, image] of client.gallery.entries()) {
         image.url = await uploadDataUrl(image.url, `gallery-${index}`);
       }
+      client.gallery2 = Array.isArray(client.gallery2) ? client.gallery2 : [];
+      for (const [index, image] of client.gallery2.entries()) {
+        image.url = await uploadDataUrl(image.url, `gallery2-${index}`);
+      }
       const catalogItems = [...(client.services || []), ...(client.products || [])];
       for (const [index, item] of catalogItems.entries()) {
         item.image = await uploadDataUrl(item.image, `catalog-${index}`);
@@ -288,6 +292,7 @@
       { id: 'sec_vcard', type: 'vCard', title: 'Download Contact', enabled: true },
       { id: 'sec_rate', type: 'GoogleRating', title: 'Rate Us on Google', enabled: true },
       { id: 'sec_gal', type: 'Gallery', title: 'Photo Gallery', enabled: true },
+      { id: 'sec_gal2', type: 'Gallery2', title: 'Photo Gallery 2', enabled: true },
       { id: 'sec_vid', type: 'Videos', title: 'Video Showcase', enabled: true },
       { id: 'sec_serv', type: 'Services', title: 'Services Catalog', enabled: true },
       { id: 'sec_prod', type: 'Products', title: 'Products Store', enabled: true },
@@ -308,6 +313,7 @@
       addBlock('GalleryBanner', 'WhatsApp');
       addBlock('InstagramEngagement', 'Facebook');
       addBlock('GoogleRating', 'Gallery');
+      addBlock('Gallery2', 'Videos');
       return client;
     }
 
@@ -851,7 +857,8 @@
         basicInfo: { fullName: '', businessName: '', phone: '', whatsapp: '', email: '', website: '', bio: '', address: '', googleMapsUrl: '', openingHours: '', avatarUrl: '', logoUrl: '', theme: 'modern' },
         socials: { instagram: '', facebook: '', youtube: '', linkedin: '', telegram: '' },
         galleryConfig: { style: 'grid', captionVisible: true },
-        gallery: [], videos: [], services: [], products: [], links: [],
+        gallery2Config: { style: 'grid', captionVisible: false },
+        gallery: [], gallery2: [], videos: [], services: [], products: [], links: [],
         sectionOrder: JSON.parse(JSON.stringify(DEFAULT_SECTION_ORDER)),
         analytics: { views: 0, leads: 0, clicks: 0 },
         leads: []
@@ -1218,8 +1225,15 @@
 
 
     function renderTabMedia(c) {
+      c.gallery = Array.isArray(c.gallery) ? c.gallery : [];
+      c.gallery2 = Array.isArray(c.gallery2) ? c.gallery2 : [];
+      c.galleryConfig = c.galleryConfig || { style: 'grid', captionVisible: true };
+      c.gallery2Config = c.gallery2Config || { style: 'grid', captionVisible: false };
+
       const gCount = c.gallery.length;
       const gLimit = gCount >= 30;
+      const g2Count = c.gallery2.length;
+      const g2Limit = g2Count >= 30;
       const vCount = c.videos.length;
       const vLimit = vCount >= 10;
 
@@ -1298,6 +1312,67 @@
             </div>
           </div>
 
+          <!-- GALLERY 2 MANAGER (Photos Only, Movable Block) -->
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-photo-film text-cyan-400"></i> Gallery 2 (Photos Only)</h3>
+                <p class="text-xs text-slate-400 mt-1">Upload photos only without categories or heading text. Reorder via Section Manager.</p>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${g2Limit ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-800 text-slate-300'}">
+                  ${g2Count} / 30 Photos
+                </span>
+                <button onclick="openClientAddPhotoModal('${c.id}', 'gallery2')" ${g2Limit ? 'disabled' : ''} class="px-4 py-2 rounded-xl ${g2Limit ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/30'} font-bold text-xs flex items-center gap-2 transition">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Add Photos
+                </button>
+              </div>
+            </div>
+
+            ${g2Limit ? `<div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300"><i class="fa-solid fa-circle-exclamation mr-1"></i> Gallery limit reached — 30/30. Delete images to add more.</div>` : ''}
+
+            <!-- Layout Selectors -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Layout Style:</span>
+                <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
+                  ${['grid', 'simple', 'large', 'masonry'].map(st => `
+                    <button onclick="setClientGallery2Style('${c.id}', '${st}')" class="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition ${c.gallery2Config.style === st ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">${st}</button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              ${c.gallery2.map((img, idx) => `
+                <div class="bg-slate-900 rounded-2xl border ${img.enabled===false ? 'border-slate-800 opacity-50' : 'border-slate-700'} overflow-hidden flex flex-col group relative">
+                  <div class="h-32 w-full bg-black relative">
+                    <img src="${img.url}" class="h-full w-full object-cover" />
+                    <!-- Action Overlay -->
+                    <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button onclick="toggleClientMediaState('${c.id}', 'gallery2', ${idx})" class="w-7 h-7 rounded bg-slate-900/80 hover:bg-blue-600 text-white text-xs flex items-center justify-center backdrop-blur" title="Toggle Visibility">
+                        <i class="fa-solid ${img.enabled===false ? 'fa-eye-slash text-rose-400' : 'fa-eye'}"></i>
+                      </button>
+                      <button onclick="deleteClientMedia('${c.id}', 'gallery2', '${img.id}')" class="w-7 h-7 rounded bg-slate-900/80 hover:bg-rose-600 text-white text-xs flex items-center justify-center backdrop-blur" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="p-3 flex-1 flex flex-col justify-between border-t border-slate-800">
+                    <div class="flex justify-between items-center mt-auto pt-2">
+                      <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Order</span>
+                      <div class="flex gap-1">
+                        <button onclick="reorderClientMedia('${c.id}', 'gallery2', ${idx}, -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] flex items-center justify-center ${idx===0?'invisible':''}"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button onclick="reorderClientMedia('${c.id}', 'gallery2', ${idx}, 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] flex items-center justify-center ${idx===c.gallery2.length-1?'invisible':''}"><i class="fa-solid fa-arrow-right"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
           <!-- VIDEO MANAGER -->
           <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -1356,6 +1431,13 @@
       renderApp();
     }
 
+    function setClientGallery2Style(clientId, style) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      c.gallery2Config = c.gallery2Config || { style: 'grid', captionVisible: false };
+      c.gallery2Config.style = style;
+      renderApp();
+    }
+
     function updateGalleryHeading(clientId, value) {
       const c = AppState.clients.find(x => x.id === clientId);
       if (c) {
@@ -1396,11 +1478,13 @@
     }
 
     // Modal: Gallery Upload
-    function openClientAddPhotoModal(clientId) {
+    function openClientAddPhotoModal(clientId, galleryKey = 'gallery') {
+      const isG2 = galleryKey === 'gallery2';
+      const label = isG2 ? 'Gallery 2' : 'Gallery';
       openModal(`
         <div class="space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-slate-700">
-            <h3 class="font-bold text-white text-base"><i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-2"></i> Upload to Gallery</h3>
+            <h3 class="font-bold text-white text-base"><i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-2"></i> Upload to ${label}</h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <div class="border-2 border-dashed border-slate-600 rounded-2xl p-10 text-center hover:border-emerald-500 hover:bg-slate-800/50 transition cursor-pointer" onclick="document.getElementById('gallery-upload-input').click()">
@@ -1408,18 +1492,19 @@
             <p class="text-sm font-bold text-white">Click to Select Photos</p>
             <p class="text-[10px] text-emerald-400 mt-3 font-semibold bg-emerald-500/10 inline-block px-3 py-1 rounded-full border border-emerald-500/20">Max limit: 30 images</p>
           </div>
-          <input type="file" id="gallery-upload-input" multiple accept="image/*" class="hidden" onchange="handleClientGalleryFiles(event, '${clientId}')" />
+          <input type="file" id="gallery-upload-input" multiple accept="image/*" class="hidden" onchange="handleClientGalleryFiles(event, '${clientId}', '${galleryKey}')" />
         </div>
       `);
     }
 
-    async function handleClientGalleryFiles(event, clientId) {
+    async function handleClientGalleryFiles(event, clientId, galleryKey = 'gallery') {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
       const c = AppState.clients.find(x => x.id === clientId);
       if (!c) return;
+      c[galleryKey] = Array.isArray(c[galleryKey]) ? c[galleryKey] : [];
       
-      if (c.gallery.length + files.length > 30) {
+      if (c[galleryKey].length + files.length > 30) {
         showToast(`Cannot add ${files.length} photos. Limit is 30.`, 'error');
         return;
       }
@@ -1430,7 +1515,7 @@
           const imageUrl = await uploadToCloudinary(file, 'image');
           added.push({ id: 'img_' + Date.now() + Math.random(), url: imageUrl, title: '', caption: '', enabled: true });
         }
-        c.gallery.push(...added);
+        c[galleryKey].push(...added);
         closeModal();
         renderApp();
         showToast(`${added.length} photo(s) uploaded. Save Changes to publish them.`);
@@ -1601,7 +1686,7 @@
     }
 
     function getSectionIcon(type) {
-      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'InstagramEngagement':'fa-heart', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'GalleryBanner':'fa-panorama', 'GoogleRating':'fa-star', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
+      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'InstagramEngagement':'fa-heart', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'Gallery2':'fa-photo-film', 'GalleryBanner':'fa-panorama', 'GoogleRating':'fa-star', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
       return map[type] || 'fa-cube';
     }
 
@@ -1982,6 +2067,29 @@
               }
 
               html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">${c.galleryConfig?.heading ? `<h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${c.galleryConfig.heading}</h3>` : ''}<div class="${layoutCls}">${gHtml}</div></div>`;
+            }
+            break;
+
+          // Second Gallery (Photos Only, No Heading / Category Text, Movable Block)
+          case 'Gallery2':
+            const g2v = (c.gallery2 || []).filter(g => g.enabled !== false);
+            if (g2v.length > 0) {
+              const gallery2Style = c.gallery2Config?.style || 'grid';
+              let layout2Cls = 'grid grid-cols-2 gap-2';
+              let g2Html = g2v.map(g => `<img src="${g.url}" class="w-full aspect-square object-cover rounded-xl shadow-sm border border-white/10"/>`).join('');
+
+              if (gallery2Style === 'simple') {
+                layout2Cls = 'flex flex-col gap-3';
+                g2Html = g2v.map(g => `<img src="${g.url}" class="w-full h-auto object-cover rounded-2xl shadow-md border border-white/10"/>`).join('');
+              } else if (gallery2Style === 'large') {
+                layout2Cls = 'flex flex-col gap-4';
+                g2Html = g2v.map(g => `<div class="rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-md"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join('');
+              } else if (gallery2Style === 'masonry') {
+                layout2Cls = 'masonry-grid';
+                g2Html = g2v.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join('');
+              }
+
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl"><div class="${layout2Cls}">${g2Html}</div></div>`;
             }
             break;
 

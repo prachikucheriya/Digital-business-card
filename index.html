@@ -462,6 +462,46 @@
       }
     }
 
+    function downloadVCard() {
+      const slug = AppState.publicSlug;
+      const client = AppState.clients.find(c => c.slug === slug || c._firestoreSlug === slug);
+      
+      if (!client || !client.basicInfo) {
+        showToast('Contact information not available', 'error');
+        return;
+      }
+
+      const b = client.basicInfo;
+      
+      // Generate vCard 3.0 format
+      const vcard = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        `FN:${b.fullName || ''}`,
+        `ORG:${b.businessName || ''}`,
+        `TEL;TYPE=CELL:${b.phone || ''}`,
+        `TEL;TYPE=WHATSAPP:${b.whatsapp || ''}`,
+        `EMAIL:${b.email || ''}`,
+        `URL:${b.website || ''}`,
+        `ADR;TYPE=WORK:;;${b.address || ''};;;;`,
+        `NOTE:${b.bio || ''}`,
+        'END:VCARD'
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${b.fullName || 'contact'}.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showToast('Contact saved successfully!', 'success');
+    }
+
     function generateSlug(name) {
       if (!name) return 'profile-' + Math.floor(Math.random() * 1000);
       let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');

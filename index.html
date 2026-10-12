@@ -127,6 +127,25 @@
     .theme-glass { --profile-card:rgba(30,41,59,.78); --profile-ink:#fff; --profile-border:rgba(255,255,255,.18); background:linear-gradient(135deg,#1e293b,#334155); color:#fff; }
     .theme-creative { --profile-card:rgba(76,29,149,.42); --profile-ink:#fff; --profile-border:rgba(255,255,255,.25); background:linear-gradient(135deg,#4c1d95,#831843); color:#fff; }
     .theme-emerald { --profile-card:rgba(6,78,59,.62); --profile-ink:#f0fdf4; --profile-border:rgba(255,255,255,.2); background:linear-gradient(135deg,#064e3b,#022c22); color:#f0fdf4; }
+
+    /* Custom Background Image Support */
+    .theme-custom-bg {
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+    }
+    .theme-custom-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 0;
+    }
+    .theme-custom-bg > * {
+      position: relative;
+      z-index: 1;
+    }
     .profile-content .card-bg { background:var(--profile-card,rgba(15,23,42,.7)); border-color:var(--profile-border,rgba(255,255,255,.15)); color:var(--profile-ink,#fff); box-shadow:0 10px 25px rgba(15,23,42,.12); }
     .profile-content .card-bg > h3 { justify-content:center; text-align:center; }
     .theme-ivory .card-bg .text-white, .theme-blush .card-bg .text-white, .theme-sky .card-bg .text-white, .theme-sage .card-bg .text-white, .theme-lavender .card-bg .text-white, .theme-minimal .card-bg .text-white { color:var(--profile-ink)!important; }
@@ -353,7 +372,8 @@
             openingHours: 'Mon-Sun: 11:00 AM - 11:00 PM',
             avatarUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&auto=format&fit=crop&q=80',
             logoUrl: '',
-            theme: 'modern'
+            theme: 'modern',
+            backgroundImageUrl: ''
           },
           socials: { instagram: 'https://instagram.com/kanhaiyaveg', facebook: '', youtube: '', linkedin: '', telegram: '' },
           galleryConfig: { style: 'grid', captionVisible: true },
@@ -395,7 +415,8 @@
             openingHours: 'Mon-Sat: 10AM - 8PM',
             avatarUrl: 'https://images.unsplash.com/photo-1590611936760-eeb9bc598548?w=400&auto=format&fit=crop&q=80',
             logoUrl: '',
-            theme: 'minimal'
+            theme: 'minimal',
+            backgroundImageUrl: ''
           },
           socials: { instagram: '', facebook: '', youtube: '', linkedin: '', telegram: '' },
           galleryConfig: { style: 'simple', captionVisible: true },
@@ -894,7 +915,7 @@
         renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
         renewalAmount: 999,
         paymentStatus: 'paid',
-        basicInfo: { fullName: '', businessName: '', phone: '', whatsapp: '', email: '', website: '', bio: '', address: '', googleMapsUrl: '', openingHours: '', avatarUrl: '', logoUrl: '', theme: 'modern' },
+        basicInfo: { fullName: '', businessName: '', phone: '', whatsapp: '', email: '', website: '', bio: '', address: '', googleMapsUrl: '', openingHours: '', avatarUrl: '', logoUrl: '', theme: 'modern', backgroundImageUrl: '' },
         socials: { instagram: '', facebook: '', youtube: '', linkedin: '', telegram: '' },
         galleryConfig: { style: 'grid', captionVisible: true },
         gallery2Config: { style: 'grid', captionVisible: false },
@@ -1157,6 +1178,27 @@
               <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-palette text-violet-400"></i> Profile Background Theme</h3>
               <p class="text-xs text-slate-400 mt-1">Choose a look that suits this client's brand. The public profile preview updates instantly.</p>
             </div>
+
+            <!-- Custom Background Image Upload -->
+            <div class="space-y-3">
+              <label class="block text-[11px] font-bold text-slate-300">Custom Background Image (Optional)</label>
+              <div class="flex items-center gap-3">
+                ${b.backgroundImageUrl ? `
+                  <div class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-600">
+                    <img src="${b.backgroundImageUrl}" class="w-full h-full object-cover" alt="Background preview"/>
+                    <button type="button" onclick="removeClientBackgroundImage('${c.id}')" class="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold hover:bg-red-600 transition">×</button>
+                  </div>
+                ` : ''}
+                <div class="flex-1">
+                  <input type="file" id="bg-upload-${c.id}" accept="image/*" class="hidden" onchange="handleBackgroundImageUpload(event, '${c.id}')"/>
+                  <button type="button" onclick="document.getElementById('bg-upload-${c.id}').click()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-upload"></i> ${b.backgroundImageUrl ? 'Change Background' : 'Upload Background'}
+                  </button>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500">Upload a custom background image. It will override the selected theme background.</p>
+            </div>
+
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               ${[
                 ['ivory', 'Ivory', 'bg-[#fff1d4] text-[#4c3825]'],
@@ -1565,6 +1607,32 @@
       }
     }
 
+    async function handleBackgroundImageUpload(event, clientId) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const c = AppState.clients.find(x => x.id === clientId);
+      if (!c) return;
+      
+      try {
+        if (file.size > 10 * 1024 * 1024) throw new Error('Background image is larger than 10 MB.');
+        const url = await uploadToCloudinary(file, 'image');
+        c.basicInfo.backgroundImageUrl = url;
+        renderApp();
+        showToast('Background image uploaded successfully!');
+      } catch (error) {
+        console.error('Could not upload background image:', error);
+        showToast(`Background upload failed: ${error.message}`, 'error');
+      }
+    }
+
+    function removeClientBackgroundImage(clientId) {
+      const c = AppState.clients.find(x => x.id === clientId);
+      if (!c) return;
+      c.basicInfo.backgroundImageUrl = '';
+      renderApp();
+      showToast('Background image removed');
+    }
+
     // Modal: Video Link / Upload
     function openClientAddVideoModal(clientId) {
       openModal(`
@@ -1762,8 +1830,13 @@
     function initClientPreviewSync() {
       const container = document.getElementById('live-preview-container');
       if (container && AppState.currentClientId) {
+        const client = AppState.clients.find(c => c.id === AppState.currentClientId);
+        const theme = client.basicInfo.theme || 'modern';
+        const bgImage = client.basicInfo.backgroundImageUrl;
+        const themeClass = bgImage ? 'theme-custom-bg' : `theme-${theme}`;
+        const styleAttr = bgImage ? `style="background-image: url('${bgImage}')"` : '';
         // Generate the exact same HTML that the public profile uses
-        container.innerHTML = `<div class="theme-${AppState.clients.find(c=>c.id===AppState.currentClientId).basicInfo.theme || 'modern'} min-h-full pb-8 pointer-events-none">${generatePublicProfileHTML(AppState.currentClientId, true)}</div>`;
+        container.innerHTML = `<div class="${themeClass} min-h-full pb-8 pointer-events-none" ${styleAttr}>${generatePublicProfileHTML(AppState.currentClientId, true)}</div>`;
       }
     }
 
@@ -1988,8 +2061,13 @@
          return `<div class="min-h-screen flex items-center justify-center bg-slate-950 text-white"><div class="text-center p-8 bg-slate-900 rounded-3xl border border-slate-800"><h1 class="text-2xl font-bold">Temporarily Unavailable</h1><p class="text-slate-400 mt-2">This digital profile is currently inactive.</p></div></div>`;
       }
 
+      const theme = targetClient.basicInfo.theme || 'modern';
+      const bgImage = targetClient.basicInfo.backgroundImageUrl;
+      const themeClass = bgImage ? 'theme-custom-bg' : `theme-${theme}`;
+      const styleAttr = bgImage ? `style="background-image: url('${bgImage}')"` : '';
+
       return `
-        <div class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
+        <div class="min-h-screen ${themeClass} py-8 px-4 flex justify-center overflow-x-hidden relative" ${styleAttr}>
           <div class="max-w-md w-full">
             ${generatePublicProfileHTML(targetClient.id, false)}
           </div>

@@ -2055,7 +2055,7 @@
 
           // Social & Action Buttons
           case 'WhatsApp':
-            if(b.whatsapp) html += renderPublicBtn(block, `https://wa.me/${b.whatsapp}`, true);
+            if(b.whatsapp) html += renderPublicBtn(block, `https://wa.me/${normalizeWhatsAppNumber(b.whatsapp)}`, true);
             break;
           case 'Call':
             if(b.phone) html += renderPublicBtn(block, `tel:${b.phone}`, true);
@@ -2084,7 +2084,7 @@
 
           case 'vCard':
             html += `
-              <button onclick="${isPreview ? '' : 'downloadVCard()'}" class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-90 text-white font-extrabold text-sm shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+              <button onclick="${isPreview ? '' : `downloadVCard('${clientId}')`}" class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-90 text-white font-extrabold text-sm shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
                 <i class="fa-solid fa-address-card text-lg"></i> Save Contact (.vcf)
               </button>
             `;
@@ -2200,11 +2200,12 @@
             html += `
               <div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">
                 <h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-paper-plane text-cyan-400"></i> Send Enquiry</h3>
-                <form class="space-y-3">
-                  <input type="text" placeholder="Your Name" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
-                  <input type="text" placeholder="Mobile / WhatsApp" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
-                  <textarea rows="2" placeholder="Address / Message" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"></textarea>
-                  <button type="button" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-slate-900 shadow-md">Submit Enquiry</button>
+                <form class="space-y-3" onsubmit="submitProfileEnquiry(event, '${clientId}')">
+                  <input name="name" required maxlength="120" type="text" placeholder="Your Name" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
+                  <input name="mobile" required maxlength="25" type="tel" placeholder="Mobile / WhatsApp" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"/>
+                  <textarea name="message" required maxlength="2000" rows="2" placeholder="Address / Message" class="enquiry-field w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500"></textarea>
+                  <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-md">Send on WhatsApp</button>
+                  <div data-enquiry-result class="text-xs space-y-2" role="status"></div>
                 </form>
               </div>
             `;
@@ -2214,6 +2215,82 @@
 
       html += `<div class="text-center pt-8 border-t border-white/10 mt-6"><span class="text-[10px] opacity-50 uppercase tracking-widest font-bold">Powered by <strong>Netria Connect</strong></span></div></div>`;
       return html;
+    }
+
+    function normalizeWhatsAppNumber(value) {
+      let digits = String(value || '').replace(/\D/g, '');
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+      if (digits.length === 10) digits = '91' + digits;
+      return /^[1-9]\d{7,14}$/.test(digits) ? digits : '';
+    }
+
+    function downloadVCard(clientId) {
+      const client = AppState.clients.find(c => c.id === clientId);
+      if (!client) return;
+      const b = client.basicInfo;
+      const escape = value => String(value || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+      const lines = ['BEGIN:VCARD', 'VERSION:3.0',
+        'N:;' + escape(b.fullName || b.businessName) + ';;;',
+        'FN:' + escape(b.fullName || b.businessName), 'ORG:' + escape(b.businessName)];
+      const phone = b.phone || b.whatsapp;
+      if (phone) lines.push('TEL;TYPE=CELL:' + escape(phone));
+      if (b.email) lines.push('EMAIL:' + escape(b.email));
+      if (b.website) lines.push('URL:' + escape(b.website));
+      lines.push('END:VCARD');
+      const url = URL.createObjectURL(new Blob([lines.join('\r\n') + '\r\n'], {type:'text/vcard;charset=utf-8'}));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (client.slug || 'contact') + '.vcf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    function submitProfileEnquiry(event, clientId) {
+      event.preventDefault();
+      const form = event.target;
+      if (!form.reportValidity()) return;
+      const client = AppState.clients.find(c => c.id === clientId);
+      if (!client) return;
+      const b = client.basicInfo;
+      const data = new FormData(form);
+      const name = String(data.get('name') || '').trim();
+      const mobile = String(data.get('mobile') || '').trim();
+      const message = String(data.get('message') || '').trim();
+      if (!name || !normalizeWhatsAppNumber(mobile) || !message) {
+        return showToast('Enter your name, valid mobile number and message.', 'error');
+      }
+      const body = ['New enquiry for ' + (b.businessName || b.fullName || 'your business'),
+        'Name: ' + name, 'Mobile: ' + mobile, 'Address / Message: ' + message,
+        'Profile: ' + getBaseUrl() + '/p/' + client.slug].join('\n');
+      const result = form.querySelector('[data-enquiry-result]');
+      result.replaceChildren();
+      const addLink = (label, url) => {
+        const link = document.createElement('a');
+        link.textContent = label;
+        link.href = url;
+        link.className = 'block underline font-bold';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        result.appendChild(link);
+      };
+      const number = normalizeWhatsAppNumber(b.whatsapp || b.phone);
+      if (number) {
+        const url = 'https://wa.me/' + number + '?text=' + encodeURIComponent(body);
+        addLink('Open WhatsApp to send enquiry', url);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      if (b.email) addLink('Also send this enquiry by email',
+        'mailto:' + encodeURIComponent(b.email.trim()) + '?subject=' +
+        encodeURIComponent('Enquiry: ' + (b.businessName || b.fullName || 'Business')) +
+        '&body=' + encodeURIComponent(body));
+      const note = document.createElement('p');
+      note.textContent = number || b.email ?
+        'Press Send in WhatsApp. Use the email link to send the same details by email.' :
+        'This profile has no contact destination. Please contact the business directly.';
+      result.appendChild(note);
     }
 
     function playProfileVideo(button) {

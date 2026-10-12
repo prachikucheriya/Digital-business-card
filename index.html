@@ -232,6 +232,7 @@
       };
       client.basicInfo = client.basicInfo || {};
       client.basicInfo.avatarUrl = await uploadDataUrl(client.basicInfo.avatarUrl, 'avatar');
+      client.basicInfo.backgroundUrl = await uploadDataUrl(client.basicInfo.backgroundUrl || '', 'background');
       client.gallery = Array.isArray(client.gallery) ? client.gallery : [];
       for (const [index, image] of client.gallery.entries()) {
         image.url = await uploadDataUrl(image.url, `gallery-${index}`);
@@ -1137,6 +1138,17 @@
             </div>
           </div>
 
+          <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Custom Background Image</h3>
+            <input type="file" id="background-upload" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleBackgroundUpload(event, '${c.id}')" />
+            <div class="flex gap-2">
+              <button type="button" onclick="document.getElementById('background-upload').click()" class="px-4 py-2 rounded-lg bg-blue-600 text-xs text-white font-bold">Upload Background</button>
+              <button type="button" onclick="removeProfileBackground('${c.id}')" class="px-4 py-2 rounded-lg bg-slate-700 text-xs text-white font-bold">Remove Background</button>
+            </div>
+            <p class="text-xs text-slate-400">JPG, PNG or WEBP, up to 10 MB. Upload to preview, then Save Changes to publish.</p>
+            ${b.backgroundUrl ? `<div class="h-40 rounded-xl border border-slate-700" style="${getProfileBackgroundStyle(c)}"></div>` : ''}
+          </div>
+
           <!-- Social Media Integration -->
           <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
             <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-400"></i> Social Media Links</h3>
@@ -1198,6 +1210,42 @@
         return;
       }
       c.basicInfo[field] = value;
+    }
+
+    function getProfileBackgroundStyle(client) {
+      const url = client.basicInfo.backgroundUrl;
+      if (!url || !/^https:\/\//i.test(url)) return '';
+      const safeUrl = encodeURI(url).replace(/['"()<>]/g, ch => '%' + ch.charCodeAt(0).toString(16)).replace(/&/g, '&amp;');
+      return "background-image:url('" + safeUrl + "');background-size:cover;background-position:center;background-repeat:no-repeat;";
+    }
+
+    async function handleBackgroundUpload(event, clientId) {
+      const file = event.target.files[0];
+      const client = AppState.clients.find(c => c.id === clientId);
+      if (!file || !client) return;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return showToast('Choose a JPG, PNG or WEBP image.', 'error');
+      if (file.size > 10 * 1024 * 1024) return showToast('Choose an image smaller than 10 MB.', 'error');
+      const input = event.target;
+      input.disabled = true;
+      showToast('Uploading background…');
+      try {
+        client.basicInfo.backgroundUrl = await uploadToCloudinary(file, 'image');
+        renderApp();
+        showToast('Background uploaded. Save Changes to publish.');
+      } catch (error) {
+        showToast('Background upload failed: ' + error.message, 'error');
+      } finally {
+        input.disabled = false;
+        input.value = '';
+      }
+    }
+
+    function removeProfileBackground(clientId) {
+      const client = AppState.clients.find(c => c.id === clientId);
+      if (!client) return;
+      client.basicInfo.backgroundUrl = '';
+      renderApp();
+      showToast('Background removed. Save Changes to publish.');
     }
 
     function setClientTheme(clientId, theme) {
@@ -1727,7 +1775,7 @@
       const container = document.getElementById('live-preview-container');
       if (container && AppState.currentClientId) {
         // Generate the exact same HTML that the public profile uses
-        container.innerHTML = `<div class="theme-${AppState.clients.find(c=>c.id===AppState.currentClientId).basicInfo.theme || 'modern'} min-h-full pb-8 pointer-events-none">${generatePublicProfileHTML(AppState.currentClientId, true)}</div>`;
+        container.innerHTML = `<div style="${getProfileBackgroundStyle(AppState.clients.find(c=>c.id===AppState.currentClientId))}" class="theme-${AppState.clients.find(c=>c.id===AppState.currentClientId).basicInfo.theme || 'modern'} min-h-full pb-8 pointer-events-none">${generatePublicProfileHTML(AppState.currentClientId, true)}</div>`;
       }
     }
 
@@ -1953,7 +2001,7 @@
       }
 
       return `
-        <div class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
+        <div style="${getProfileBackgroundStyle(targetClient)}" class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
           <div class="max-w-md w-full">
             ${generatePublicProfileHTML(targetClient.id, false)}
           </div>

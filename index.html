@@ -248,6 +248,10 @@
 
     async function saveClientToFirestore(client) {
       if (!firebaseAuth.currentUser) throw new Error('Please sign in before saving profiles.');
+      if (!client.slug || client.slug.startsWith('new-profile-')) {
+        const profileName = (client.basicInfo.businessName || client.basicInfo.fullName || '').trim();
+        if (profileName) client.slug = generateSlug(profileName);
+      }
       await moveLegacyMediaToCloudinary(client);
       const oldSlug = client._firestoreSlug || client.slug;
       const cleanClient = makeFirestoreSafe(client);
@@ -267,8 +271,8 @@
     }
 
     function getBaseUrl() {
-      // Build links on the same domain currently serving the app (Vercel, Netlify, or custom domain).
-      return window.location.origin;
+      // Canonical public domain for profile links and QR codes.
+      return 'https://netriaconnect.online';
     }
 
     // Default Section Layout Blueprint for New Clients
@@ -848,7 +852,7 @@
       const newId = 'c_' + Date.now();
       const newClient = {
         id: newId,
-        slug: 'new-profile-' + Date.now().toString().slice(-4), // Temporary, will be updated based on business name
+        slug: 'new-profile-' + Date.now().toString(), // Temporary, will be updated based on business name
         status: 'draft',
         activationDate: new Date().toISOString(),
         renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),

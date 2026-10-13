@@ -1122,7 +1122,7 @@
           <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
             <div>
               <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-palette text-violet-400"></i> Profile Background Theme</h3>
-              <p class="text-xs text-slate-400 mt-1">Choose a look that suits this client's brand. The public profile preview updates instantly.</p>
+              <p class="text-xs text-slate-400 mt-1">Choose section colors and formatting. Your uploaded background stays visible with every theme; without an image, the theme background is used.</p>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               ${[
@@ -1147,7 +1147,7 @@
               <button type="button" onclick="document.getElementById('background-upload').click()" class="px-4 py-2 rounded-lg bg-blue-600 text-xs text-white font-bold">Upload Background</button>
               <button type="button" onclick="removeProfileBackground('${c.id}')" class="px-4 py-2 rounded-lg bg-slate-700 text-xs text-white font-bold">Remove Background</button>
             </div>
-            <p class="text-xs text-slate-400">JPG, PNG or WEBP, up to 10 MB. Upload to preview, then Save Changes to publish.</p>
+            <p class="text-xs text-slate-400">JPG, PNG or WEBP, up to 10 MB. Combine your image with any theme for section formatting. Remove the image to use the theme background. Save Changes to publish.</p>
             ${b.backgroundUrl ? `<div class="h-40 rounded-xl border border-slate-700" style="${getProfileBackgroundStyle(c)}"></div>` : ''}
           </div>
 
@@ -1218,7 +1218,7 @@
       const url = client.basicInfo.backgroundUrl;
       if (!url || !/^https:\/\//i.test(url)) return '';
       const safeUrl = encodeURI(url).replace(/['"()<>]/g, ch => '%' + ch.charCodeAt(0).toString(16)).replace(/&/g, '&amp;');
-      return "background-image:url('" + safeUrl + "');background-size:cover;background-position:center;background-repeat:no-repeat;";
+      return "background-image:url('" + safeUrl + "') !important;background-size:cover !important;background-position:center !important;background-repeat:no-repeat !important;";
     }
 
     async function handleBackgroundUpload(event, clientId) {

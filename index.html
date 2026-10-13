@@ -145,6 +145,7 @@
     }
     .animate-pulse-subtle { animation: pulse-subtle 3s infinite ease-in-out; }
     .theme-sage .profile-content .profile-journey { background: transparent !important; box-shadow: none; }
+    .theme-sage .profile-content .profile-map-button { background: #fff !important; color: #294334 !important; border-color: #d1d5db; }
   </style>
 </head>
 <body class="h-full bg-slate-900 text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -2190,7 +2191,7 @@
                   <h3 class="font-bold flex items-center gap-2 mb-3 text-white"><i class="fa-solid fa-location-dot text-rose-400"></i> ${block.title}</h3>
                   ${b.address ? `<p class="opacity-90 leading-relaxed text-xs">${b.address}</p>` : ''}
                   ${b.openingHours ? `<div class="flex items-center gap-2 mt-3 bg-blue-500/20 text-blue-300 font-bold px-3 py-2 rounded-xl text-xs border border-blue-500/30"><i class="fa-solid fa-clock"></i> ${b.openingHours}</div>` : ''}
-                  ${b.googleMapsUrl ? `<a href="${b.googleMapsUrl}" target="_blank" class="flex items-center justify-center gap-2 mt-3 w-full py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold transition border border-white/10 shadow-md"><i class="fa-solid fa-map-marked-alt"></i> Navigate on Maps</a>` : ''}
+                  ${b.googleMapsUrl ? `<a href="${b.googleMapsUrl}" target="_blank" class="profile-map-button flex items-center justify-center gap-2 mt-3 w-full py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold transition border border-white/10 shadow-md"><i class="fa-solid fa-map-marked-alt"></i> Navigate on Maps</a>` : ''}
                 </div>
               `;
             }

@@ -144,6 +144,7 @@
       50% { opacity: 0.92; transform: scale(1.02); }
     }
     .animate-pulse-subtle { animation: pulse-subtle 3s infinite ease-in-out; }
+    .theme-sage .profile-content .profile-journey { background: transparent !important; box-shadow: none; }
   </style>
 </head>
 <body class="h-full bg-slate-900 text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -2072,7 +2073,7 @@
           case 'InstagramEngagement':
             if (c.socials.instagram) {
               const likeUrl = c.socials.instagramPost || c.socials.instagram;
-              html += `<div class="card-bg p-4 rounded-2xl border border-white/10 shadow-xl"><p class="text-xs font-bold text-white text-center">Follow our journey</p><div class="grid grid-cols-2 gap-2 mt-3"><a href="${c.socials.instagram}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-rose-500 text-xs font-bold text-white text-center"><i class="fa-brands fa-instagram"></i> Follow</a><a href="${likeUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white text-center"><i class="fa-solid fa-heart text-rose-400"></i> Like</a></div></div>`;
+              html += `<div class="card-bg profile-journey p-4 rounded-2xl border border-white/10 shadow-xl"><p class="text-xs font-bold text-white text-center">Follow our journey</p><div class="grid grid-cols-2 gap-2 mt-3"><a href="${c.socials.instagram}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-rose-500 text-xs font-bold text-white text-center"><i class="fa-brands fa-instagram"></i> Follow</a><a href="${likeUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white text-center"><i class="fa-solid fa-heart text-rose-400"></i> Like</a></div></div>`;
             }
             break;
           case 'Facebook':

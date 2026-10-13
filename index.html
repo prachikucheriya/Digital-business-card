@@ -301,6 +301,7 @@
       { id: 'sec_rate', type: 'GoogleRating', title: 'Rate Us on Google', enabled: true },
       { id: 'sec_gal', type: 'Gallery', title: 'Photo Gallery', enabled: true },
       { id: 'sec_gal2', type: 'Gallery2', title: 'Photo Gallery 2', enabled: true },
+      { id: 'sec_brand_video', type: 'BrandVideo', title: 'Brand Video', enabled: true },
       { id: 'sec_vid', type: 'Videos', title: 'Video Showcase', enabled: true },
       { id: 'sec_serv', type: 'Services', title: 'Services Catalog', enabled: true },
       { id: 'sec_prod', type: 'Products', title: 'Products Store', enabled: true },
@@ -322,6 +323,11 @@
       addBlock('InstagramEngagement', 'Facebook');
       addBlock('GoogleRating', 'Gallery');
       addBlock('Gallery2', 'Videos');
+      if (!client.sectionOrder.some(section => section.type === 'BrandVideo')) {
+        const videosBlock = client.sectionOrder.find(section => section.type === 'Videos');
+        addBlock('BrandVideo', 'Videos');
+        if (videosBlock) client.sectionOrder.find(section => section.type === 'BrandVideo').enabled = videosBlock.enabled;
+      }
       return client;
     }
 
@@ -1741,7 +1747,7 @@
     }
 
     function getSectionIcon(type) {
-      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'InstagramEngagement':'fa-heart', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'Gallery2':'fa-photo-film', 'GalleryBanner':'fa-panorama', 'GoogleRating':'fa-star', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
+      const map = { 'ProfilePhoto':'fa-camera', 'FullName':'fa-font', 'BusinessName':'fa-building', 'Bio':'fa-align-left', 'WhatsApp':'fa-whatsapp', 'Call':'fa-phone', 'Email':'fa-envelope', 'Website':'fa-globe', 'Instagram':'fa-instagram', 'InstagramEngagement':'fa-heart', 'Facebook':'fa-facebook', 'YouTube':'fa-youtube', 'LinkedIn':'fa-linkedin', 'Telegram':'fa-telegram', 'CustomLinks':'fa-link', 'vCard':'fa-address-card', 'Gallery':'fa-images', 'Gallery2':'fa-photo-film', 'GalleryBanner':'fa-panorama', 'GoogleRating':'fa-star', 'BrandVideo':'fa-film', 'Videos':'fa-play', 'Services':'fa-briefcase', 'Products':'fa-box', 'ContactForm':'fa-paper-plane', 'Map':'fa-map-location-dot' };
       return map[type] || 'fa-cube';
     }
 
@@ -2029,6 +2035,7 @@
     // Extracted HTML generation for reusability in Live Preview and Public Page
     function generatePublicProfileHTML(clientId, isPreview = false) {
       const c = AppState.clients.find(x => x.id === clientId);
+      normalizeClientSections(c);
       const b = c.basicInfo;
       let html = `<div class="profile-content space-y-4 text-center ${isPreview ? 'p-3' : 'pb-12'}">`;
       const galleryGroups = getGalleryShowcaseGroups(c);
@@ -2161,8 +2168,9 @@
             break;
 
           // Videos Showcase
+          case 'BrandVideo':
           case 'Videos':
-            const vv = c.videos.filter(v => v.enabled !== false);
+            const vv = (c.videos || []).filter(v => v.enabled !== false && (block.type === 'BrandVideo' ? v.videoKind === 'brand' : v.videoKind !== 'brand'));
             if (vv.length > 0) {
               const renderVideoCard = (v, compact = false) => {
                 const youtubeId = (v.embedUrl || '').match(/youtube\.com\/embed\/([^?&]+)/)?.[1];
@@ -2177,9 +2185,9 @@
                   </div>
                 `;
               };
-              const brandVideos = vv.filter(v => v.videoKind === 'brand');
-              const productVideos = vv.filter(v => v.videoKind !== 'brand');
-              const vHtml = `${brandVideos.map(v => `<div class="mb-4">${renderVideoCard(v)}</div>`).join('')}${productVideos.length ? `<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-rose-300">Product videos</p><div class="grid grid-cols-2 gap-3">${productVideos.map(v => renderVideoCard(v, true)).join('')}</div>` : ''}`;
+              const vHtml = block.type === 'BrandVideo'
+                ? vv.map(v => `<div>${renderVideoCard(v)}</div>`).join('')
+                : `<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-rose-300">Product videos</p><div class="grid grid-cols-2 gap-3">${vv.map(v => renderVideoCard(v, true)).join('')}</div>`;
               html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-3"><div>${vHtml}</div></div>`;
             }
             break;

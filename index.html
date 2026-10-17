@@ -2145,7 +2145,7 @@
                 `;
               }
 
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">${c.galleryConfig?.heading ? `<h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${c.galleryConfig.heading}</h3>` : ''}<div class="${layoutCls}">${gHtml}</div></div>`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">${c.galleryConfig?.heading ? `<h3 class="font-bold text-base flex items-center gap-2 text-white"><i class="fa-solid fa-images text-emerald-400"></i> ${c.galleryConfig.heading}</h3>` : ''}<div data-gallery-group class="${layoutCls}">${makeGalleryClickable(gHtml)}</div></div>`;
             }
             break;
 
@@ -2168,7 +2168,7 @@
                 g2Html = g2v.map(g => `<div class="masonry-item rounded-xl overflow-hidden border border-white/10"><img src="${g.url}" class="w-full h-auto object-cover"/></div>`).join('');
               }
 
-              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl"><div class="${layout2Cls}">${g2Html}</div></div>`;
+              html += `<div class="card-bg p-5 rounded-3xl border border-white/10 shadow-xl"><div data-gallery-group class="${layout2Cls}">${makeGalleryClickable(g2Html)}</div></div>`;
             }
             break;
 
@@ -2319,6 +2319,64 @@
         'Press Send in WhatsApp. Use the email link to send the same details by email.' :
         'This profile has no contact destination. Please contact the business directly.';
       result.appendChild(note);
+    }
+
+    function makeGalleryClickable(markup) {
+      return markup.replace(/<img\b[^>]*>/g, image =>
+        '<button type="button" data-gallery-photo onclick="openGalleryViewer(this)" aria-label="Open photo" style="display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in;">' + image + '</button>');
+    }
+
+    function openGalleryViewer(trigger) {
+      const group = trigger.closest('[data-gallery-group]');
+      if (!group) return;
+      const buttons = Array.from(group.querySelectorAll('[data-gallery-photo]'));
+      const photos = buttons.map(button => {
+        const image = button.querySelector('img');
+        return {src:image.currentSrc || image.src, alt:image.alt || 'Gallery photo'};
+      });
+      let index = buttons.indexOf(trigger);
+      if (index < 0 || !photos.length) return;
+      document.getElementById('gallery-photo-viewer')?.close();
+      const dialog = document.createElement('dialog');
+      dialog.id = 'gallery-photo-viewer';
+      dialog.setAttribute('aria-label', 'Gallery photo viewer');
+      dialog.style.cssText = 'position:fixed;inset:0;margin:auto;width:96vw;max-width:1100px;height:94dvh;max-height:94dvh;padding:0;border:0;border-radius:16px;background:#111827;color:white;';
+      dialog.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;padding:12px;box-sizing:border-box;gap:10px"><div style="display:flex;justify-content:space-between;align-items:center"><span data-photo-count aria-live="polite"></span><button type="button" data-photo-close aria-label="Close photo viewer" style="min-width:44px;min-height:44px;font-size:26px">×</button></div><img data-viewer-image alt="" style="display:block;width:100%;flex:1;min-height:0;object-fit:contain"><div style="display:flex;justify-content:space-between;gap:12px"><button type="button" data-photo-prev style="padding:12px 18px;background:#374151;border-radius:10px">← Previous</button><button type="button" data-photo-next style="padding:12px 18px;background:#374151;border-radius:10px">Next →</button></div></div>';
+      const image = dialog.querySelector('[data-viewer-image]');
+      const previous = dialog.querySelector('[data-photo-prev]');
+      const next = dialog.querySelector('[data-photo-next]');
+      const update = () => {
+        image.src = photos[index].src;
+        image.alt = photos[index].alt;
+        dialog.querySelector('[data-photo-count]').textContent = (index + 1) + ' / ' + photos.length;
+        previous.disabled = index === 0;
+        next.disabled = index === photos.length - 1;
+        previous.style.opacity = previous.disabled ? '.4' : '1';
+        next.style.opacity = next.disabled ? '.4' : '1';
+      };
+      const move = delta => {
+        index = Math.max(0, Math.min(photos.length - 1, index + delta));
+        update();
+      };
+      previous.onclick = () => move(-1);
+      next.onclick = () => move(1);
+      dialog.querySelector('[data-photo-close]').onclick = () => dialog.close();
+      dialog.addEventListener('keydown', event => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+          event.preventDefault();
+          move(event.key === 'ArrowRight' ? 1 : -1);
+        }
+      });
+      const overflow = document.body.style.overflow;
+      dialog.addEventListener('close', () => {
+        document.body.style.overflow = overflow;
+        dialog.remove();
+        trigger.focus();
+      }, {once:true});
+      document.body.appendChild(dialog);
+      document.body.style.overflow = 'hidden';
+      update();
+      dialog.showModal();
     }
 
     function playProfileVideo(button) {

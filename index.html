@@ -147,6 +147,40 @@
     .theme-sage .profile-content .profile-journey { background: transparent !important; box-shadow: none; }
     .theme-sage .profile-content .profile-map-button { background: #fff !important; color: #294334 !important; border-color: #d1d5db; }
     .theme-sage .profile-content .profile-about { background: rgb(252 250 249) !important; }
+
+    /* A viewport-sized backdrop avoids stretching images over a long profile. */
+    .profile-page.has-profile-background { isolation:isolate; }
+    .profile-page.has-profile-background::before,
+    .profile-page.has-profile-background::after {
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:-1;
+    }
+    .profile-page.has-profile-background::before {
+      background-image:var(--profile-background-image);
+      background-size:cover; background-position:center; background-repeat:no-repeat;
+    }
+    .profile-page.has-profile-background::after { background:rgba(15,23,42,.18); }
+    .profile-page-content { position:relative; min-width:0; }
+    .has-profile-background .profile-content .card-bg {
+      background:var(--profile-card);
+      border-color:var(--profile-border);
+      box-shadow:0 8px 24px rgba(15,23,42,.12);
+    }
+    .has-profile-background.theme-ivory,
+    .has-profile-background.theme-blush,
+    .has-profile-background.theme-sky,
+    .has-profile-background.theme-sage,
+    .has-profile-background.theme-lavender,
+    .has-profile-background.theme-minimal {
+      --profile-card:rgba(255,255,255,.94);
+    }
+    .has-profile-background .profile-about {
+      background:var(--profile-card) !important;
+      color:var(--profile-ink);
+    }
+    @media (max-width:480px) {
+      .profile-page { padding-left:12px; padding-right:12px; }
+      .has-profile-background .profile-content > .card-bg { padding:16px; }
+    }
   </style>
 </head>
 <body class="h-full bg-slate-900 text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -1221,10 +1255,11 @@
       c.basicInfo[field] = value;
     }
 
-    function getProfileBackgroundStyle(client) {
+    function getProfileBackgroundStyle(client, backdrop = false) {
       const url = client.basicInfo.backgroundUrl;
       if (!url || !/^https:\/\//i.test(url)) return '';
       const safeUrl = encodeURI(url).replace(/['"()<>]/g, ch => '%' + ch.charCodeAt(0).toString(16)).replace(/&/g, '&amp;');
+      if (backdrop) return "--profile-background-image:url('" + safeUrl + "');";
       return "background-image:url('" + safeUrl + "') !important;background-size:cover !important;background-position:center !important;background-repeat:no-repeat !important;";
     }
 
@@ -2027,8 +2062,8 @@
       }
 
       return `
-        <div style="${getProfileBackgroundStyle(targetClient)}" class="min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
-          <div class="max-w-md w-full">
+        <div style="${getProfileBackgroundStyle(targetClient, true)}" class="profile-page ${getProfileBackgroundStyle(targetClient, true) ? 'has-profile-background' : ''} min-h-screen theme-${targetClient.basicInfo.theme || 'modern'} py-8 px-4 flex justify-center overflow-x-hidden relative">
+          <div class="profile-page-content max-w-md w-full">
             ${generatePublicProfileHTML(targetClient.id, false)}
           </div>
         </div>

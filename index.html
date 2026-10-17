@@ -2174,7 +2174,7 @@
 
           case 'GalleryBanner':
             if (galleryGroups.banners.length) {
-              html += `<div class="space-y-3">${galleryGroups.banners.map(g => `<div class="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-md"><img src="${g.url}" alt="${g.title || 'Featured banner'}" class="w-full aspect-[16/9] object-cover"/>${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-3 text-left"><p class="font-bold text-sm text-white">${g.title || ''}</p>${g.caption ? `<p class="mt-1 text-xs opacity-70">${g.caption}</p>` : ''}</div>` : ''}</div>`).join('')}</div>`;
+              html += `<div data-gallery-group class="space-y-3">${galleryGroups.banners.map(g => `<div class="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-md">${makeGalleryClickable(`<img src="${g.url}" alt="${g.title || 'Featured banner'}" class="w-full aspect-[16/9] object-cover"/>`)}${(c.galleryConfig.captionVisible && (g.title || g.caption)) ? `<div class="p-3 text-left"><p class="font-bold text-sm text-white">${g.title || ''}</p>${g.caption ? `<p class="mt-1 text-xs opacity-70">${g.caption}</p>` : ''}</div>` : ''}</div>`).join('')}</div>`;
             }
             break;
 
@@ -2382,32 +2382,58 @@
     function playProfileVideo(button) {
       const stage = button.closest('[data-profile-video]');
       if (!stage) return;
-      const video = stage.querySelector('video');
-      if (video) {
-        video.controls = true;
-        button.remove();
-        const playback = video.play();
-        if (playback && typeof playback.catch === 'function') playback.catch(error => {
-          console.error('Video playback failed:', error);
-          showToast('Could not play this video. Please try again.', 'error');
-        });
+      document.getElementById('profile-video-viewer')?.close();
+      const sourceVideo = stage.querySelector('video');
+      const dialog = document.createElement('dialog');
+      dialog.id = 'profile-video-viewer';
+      dialog.setAttribute('aria-label', 'Video player');
+      dialog.style.cssText = 'position:fixed;inset:0;margin:auto;width:min(96vw,600px);max-width:96vw;height:94dvh;max-height:94dvh;padding:12px;border:0;border-radius:16px;background:#111827;color:white;';
+      dialog.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:flex-end"><button type="button" aria-label="Close video" style="min-width:44px;min-height:44px;font-size:26px">×</button></div><div data-video-content style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"></div></div>';
+      const content = dialog.querySelector('[data-video-content]');
+      let player;
+      try {
+        if (sourceVideo) {
+          player = document.createElement('video');
+          player.src = sourceVideo.currentSrc || sourceVideo.src;
+          player.controls = true;
+          player.playsInline = true;
+          player.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+        } else {
+          const url = new URL(decodeURIComponent(stage.dataset.videoSrc || ''));
+          if (url.protocol !== 'https:') throw new Error('Invalid video URL');
+          url.searchParams.set('autoplay', '1');
+          player = document.createElement('iframe');
+          player.src = url.toString();
+          player.title = 'Profile video';
+          player.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+          player.allowFullscreen = true;
+          player.style.cssText = 'width:100%;height:100%;border:0;';
+        }
+      } catch (error) {
+        showToast('Could not open this video. Please check the video link.', 'error');
         return;
       }
-      try {
-        const embedUrl = decodeURIComponent(stage.dataset.videoSrc || '');
-        const url = new URL(embedUrl);
-        url.searchParams.set('autoplay', '1');
-        const iframe = document.createElement('iframe');
-        iframe.src = url.toString();
-        iframe.className = 'w-full h-full';
-        iframe.setAttribute('title', 'Profile video');
-        iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('frameborder', '0');
-        stage.replaceChildren(iframe);
-      } catch (error) {
-        console.error('Could not open profile video:', error);
-        showToast('Could not open this video. Please check the video link.', 'error');
+      content.appendChild(player);
+      const overflow = document.body.style.overflow;
+      dialog.querySelector('button').onclick = () => dialog.close();
+      dialog.addEventListener('close', () => {
+        if (sourceVideo) {
+          player.pause();
+          player.removeAttribute('src');
+          player.load();
+        } else player.src = 'about:blank';
+        document.body.style.overflow = overflow;
+        dialog.remove();
+        button.focus();
+      }, {once:true});
+      document.body.appendChild(dialog);
+      document.body.style.overflow = 'hidden';
+      dialog.showModal();
+      if (sourceVideo) {
+        const playback = player.play();
+        if (playback) playback.catch(() => {
+          // Native controls remain available if the browser blocks autoplay.
+        });
       }
     }
 
